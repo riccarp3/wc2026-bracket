@@ -15,7 +15,11 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers, body: '' };
   }
 
-  const store = getStore('leaderboard');
+  const store = getStore({
+    name: 'leaderboard',
+    siteID: process.env.NETLIFY_SITE_ID,
+    token: process.env.NETLIFY_AUTH_TOKEN,
+  });
 
   // GET — return all entries + phase2 flag
   if (event.httpMethod === 'GET') {
@@ -35,16 +39,19 @@ exports.handler = async (event) => {
       const raw = await store.get('data');
       const current = raw ? JSON.parse(raw) : { entries: [], phase2Unlocked: false };
 
-      // Update phase2 flag if provided
       if (typeof body.phase2Unlocked === 'boolean') {
         current.phase2Unlocked = body.phase2Unlocked;
       }
 
-      // Upsert entry if provided
       if (body.entry) {
         const idx = current.entries.findIndex(e => e.ParticipantName === body.entry.ParticipantName);
         if (idx >= 0) current.entries[idx] = body.entry;
         else current.entries.push(body.entry);
+      }
+
+      // Support bulk entries update (for score sync)
+      if (body.entries) {
+        current.entries = body.entries;
       }
 
       await store.set('data', JSON.stringify(current));
