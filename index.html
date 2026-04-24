@@ -1444,8 +1444,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const status = document.getElementById('submit-status');
     if (status) status.textContent = 'Entries locked as of June 11, 2026 — the tournament has kicked off.';
   }
-  if (spSiteUrl)  document.getElementById('sp-site-url').value  = spSiteUrl;
-  if (spListName) document.getElementById('sp-list-name').value = spListName;
+  const spSiteEl = document.getElementById('sp-site-url');
+  const spListEl = document.getElementById('sp-list-name');
+  if (spSiteEl && spSiteUrl)  spSiteEl.value  = spSiteUrl;
+  if (spListEl && spListName) spListEl.value = spListName;
   loadLeaderboard();
 
   // Re-fetch immediately when user returns to the tab after being away
@@ -3268,4 +3270,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
-
