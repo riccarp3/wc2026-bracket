@@ -1602,6 +1602,7 @@ function saveR32Assignments() {
   localStorage.setItem('wc2026_group_results', JSON.stringify(groupResults));
   renderBracketPicks();
   renderKnockoutResultsForm();
+  pushAdminResults();
   const status = document.getElementById('r32-assignment-status');
   if (status) {
     status.textContent = '✓ R32 assignments saved. Bracket updated.';
@@ -1625,6 +1626,40 @@ async function jsonbinGet() {
     const res = await fetch(LEADERBOARD_URL);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
+
+    // Apply shared admin results so all participants see real team names
+    if (data.adminResults && !adminUnlocked) {
+      const ar = data.adminResults;
+      if (ar.groupResults && Object.keys(ar.groupResults).length > 0) {
+        groupResults = { ...ar.groupResults };
+        localStorage.setItem('wc2026_group_results', JSON.stringify(groupResults));
+      }
+      if (ar.knockoutResults && Object.keys(ar.knockoutResults).length > 0) {
+        knockoutResults = { ...ar.knockoutResults };
+        localStorage.setItem('wc2026_knockout_results', JSON.stringify(knockoutResults));
+      }
+      if (ar.r32Assignments && Object.keys(ar.r32Assignments).length > 0) {
+        r32Assignments = { ...ar.r32Assignments };
+        localStorage.setItem('wc2026_r32_assignments', JSON.stringify(r32Assignments));
+        // Merge into groupResults so resolveTeam sees pool assignments
+        _r32SlotDefs.forEach(s => { if (r32Assignments[s.id]) groupResults[s.pool] = r32Assignments[s.id]; });
+      }
+      if (ar.thirdPlaceQualifiers && ar.thirdPlaceQualifiers.length > 0) {
+        thirdPlaceQualifiers = [...ar.thirdPlaceQualifiers];
+        localStorage.setItem('wc2026_3rd_qualifiers', JSON.stringify(thirdPlaceQualifiers));
+      }
+      if (ar.qualifierResults && Object.keys(ar.qualifierResults).length > 0) {
+        qualifierResults = { ...ar.qualifierResults };
+        localStorage.setItem('wc2026_qualifiers', JSON.stringify(qualifierResults));
+        Object.assign(groupResults, qualifierResults);
+      }
+      if (ar.bonusResults && Object.keys(ar.bonusResults).length > 0) {
+        bonusResults = { ...ar.bonusResults };
+        localStorage.setItem('wc2026_bonus_results', JSON.stringify(bonusResults));
+      }
+      renderBracketPicks();
+    }
+
     // Sync phase2 unlock flag so all participants see it
     if (data.phase2Unlocked === true && !isPhase2UnlockedByAdmin()) {
       localStorage.setItem('wc2026_phase2_unlocked', 'true');
@@ -1663,6 +1698,29 @@ async function jsonbinPut(entries, phase2Unlocked) {
 
 function saveJsonBinConfig() { /* no-op — JSONBin removed */ }
 function clearJsonBinConfig() { /* no-op — JSONBin removed */ }
+
+async function pushAdminResults() {
+  try {
+    const res = await fetch(LEADERBOARD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        adminResults: {
+          groupResults,
+          knockoutResults,
+          r32Assignments,
+          thirdPlaceQualifiers,
+          qualifierResults,
+          bonusResults,
+        }
+      })
+    });
+    return res.ok;
+  } catch(e) {
+    console.error('pushAdminResults error:', e);
+    return false;
+  }
+}
 
 async function testLeaderboardConnection() {
   const status = document.getElementById('jb-status');
@@ -2527,6 +2585,7 @@ async function saveBonusResults() {
   });
   localStorage.setItem('wc2026_bonus_results', JSON.stringify(bonusResults));
   renderBonusResultsForm();
+  pushAdminResults();
   const status = document.getElementById('bonus-results-status');
   if (status) {
     status.textContent = '⏳ Saving and recalculating scores…';
@@ -2706,6 +2765,7 @@ function saveQualifiers() {
   renderGroupResultsForm();
   renderThirdPlaceGrid();
   renderKnockoutResultsForm();
+  pushAdminResults();
   document.getElementById('qualifier-status').textContent = '✓ Qualifiers saved. Names updated everywhere.';
   setTimeout(() => { document.getElementById('qualifier-status').textContent = ''; }, 4000);
   showToast('Qualifiers saved ✓', 'ok');
@@ -2793,6 +2853,7 @@ function saveThirdPlace() {
   renderKnockoutResultsForm();
   renderThirdPlaceGrid();
   renderR32AssignmentGrid();
+  pushAdminResults();
   const saved = thirdPlaceQualifiers;
   const status = document.getElementById('third-place-status');
   if (status) {
@@ -2946,6 +3007,7 @@ function saveGroupResults() {
     else        delete groupResults[`3rd Group ${letter}`];
   });
   localStorage.setItem('wc2026_group_results', JSON.stringify(groupResults));
+  pushAdminResults();
   document.getElementById('group-results-status').textContent = '✓ Group results saved. Bracket labels updated for all users.';
   setTimeout(() => { document.getElementById('group-results-status').textContent = ''; }, 4000);
   // Re-render bracket picks so labels update immediately
@@ -3059,6 +3121,7 @@ function saveKnockoutResults() {
   recalculateScores();
   renderBracketPicks(); // cascade winners into R16/QF/SF/Final
   renderKnockoutResultsForm();
+  pushAdminResults();
   document.getElementById('knockout-results-status').textContent = '✓ Results saved. Scores recalculated.';
   setTimeout(() => { document.getElementById('knockout-results-status').textContent = ''; }, 4000);
   showToast('Knockout results saved & scores updated ✓', 'ok');
@@ -3205,3 +3268,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
