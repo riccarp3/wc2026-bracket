@@ -1114,7 +1114,6 @@
     <div class="bracket-section">
       <div class="section-title">🎯 Bonus Challenges</div>
       <p style="font-size:0.8rem;color:var(--text-light);margin-bottom:16px;">Tiebreakers and fun wrinkles. Lock these in before tournament kickoff (June 11, 3:00 PM ET).</p>
-      <div id="bonus-lock-msg" style="display:none;text-align:center;padding:12px 0 4px;color:var(--text-light);font-size:0.9rem;">🔒 Bonus picks are locked — the knockout bracket has begun.</div>
       <div class="bonus-grid" id="bonus-grid"></div>
     </div>
 
@@ -2164,25 +2163,22 @@ function renderBonusQuestions(){
   const locked = getPhase() >= 2;
   if (locked) {
     const grid = document.getElementById('bonus-grid');
-    const lockMsg = document.getElementById('bonus-lock-msg');
-    if (lockMsg) lockMsg.style.display = 'block';
-    // Show locked picks as read-only tiles (preserves 2x3 grid)
-    grid.innerHTML = BONUS_QUESTIONS.map(q=>{
+    const lockBanner = `<div style="grid-column:1/-1;text-align:center;padding:10px 0 6px;color:var(--text-light);font-size:0.9rem;">🔒 Bonus picks are locked — the knockout bracket has begun.</div>`;
+    grid.innerHTML = lockBanner + BONUS_QUESTIONS.map(q=>{
       const val = bonusPicks[q.id] || '—';
+      const isTiebreaker = q.id === 'total_goals';
       return `
-        <div class="bonus-card" style="opacity:0.7;">
+        <div class="bonus-card" style="opacity:0.7;${isTiebreaker?'grid-column:1/-1;':''}">
           <div class="bonus-card-header">
             <span class="bonus-icon">${q.icon}</span><h4>${q.title}</h4><span class="pts">${q.pts}</span>
           </div>
           <div class="bonus-card-body"><p>${q.desc}</p>
-            <div style="font-weight:700;color:var(--purple);margin-top:8px;">Your pick: ${q.type==='range' ? val : val}</div>
+            <div style="font-weight:700;color:var(--purple);margin-top:8px;">Your pick: ${val}</div>
           </div>
         </div>`;
     }).join('');
     return;
   }
-  const lockMsg = document.getElementById('bonus-lock-msg');
-  if (lockMsg) lockMsg.style.display = 'none';
   document.getElementById('bonus-grid').innerHTML = BONUS_QUESTIONS.map(q=>{
     let inputHtml='';
     if(q.type==='select'){
@@ -2198,7 +2194,7 @@ function renderBonusQuestions(){
       </div>`;
     }
     return `
-      <div class="bonus-card">
+      <div class="bonus-card" ${q.id==='total_goals'?'style="grid-column:1/-1;"':''}>
         <div class="bonus-card-header">
           <span class="bonus-icon">${q.icon}</span><h4>${q.title}</h4><span class="pts">${q.pts}</span>
         </div>
