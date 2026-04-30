@@ -477,7 +477,7 @@
   /* ===== BONUS ===== */
   .bonus-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 14px;
     margin-top: 12px;
   }
@@ -744,6 +744,7 @@
     color: rgba(255,255,255,0.8);
     text-transform: uppercase;
     background: linear-gradient(135deg, var(--dark-indigo), rgb(70,25,155));
+    align-items: center;
   }
 
   .lb-row {
@@ -1020,10 +1021,14 @@
     font-size: 0.61rem;
     font-weight: 700;
     background: rgba(255,255,255,0.15);
-    padding: 2px 7px;
-    border-radius: 2px;
+    padding: 3px 8px;
+    border-radius: 6px;
     letter-spacing: 1px;
     text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
   }
 
   .divider { height: 1px; background: var(--border); margin: 28px 0; }
@@ -1304,7 +1309,7 @@
 
     <div class="config-panel">
       <h3>Enter Bonus Outcomes</h3>
-      <div id="bonus-results-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;"></div>
+      <div id="bonus-results-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"></div>
       <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn" onclick="saveBonusResults()">Save Bonus Results</button>
         <button class="btn secondary" onclick="clearBonusResults()">Clear All</button>
@@ -1998,7 +2003,7 @@ function matchupCard(slot,teamA,teamB,id,badge){
   const bWon = actualWinner && actualWinner === teamB;
   return `
     <div class="matchup">
-      <div class="matchup-header"><span>${slot}</span><span class="tag">${badge}</span>${actualWinner?'<span class="tag" style="background:rgba(16,140,80,0.3);color:rgb(16,140,80);">FINAL</span>':''}</div>
+      <div class="matchup-header"><span>${slot}</span><span class="tag" style="font-size:0.52rem;border-radius:6px;padding:3px 8px;display:inline-flex;align-items:center;justify-content:center;">${badge}</span>${actualWinner?'<span class="tag" style="background:rgb(16,140,80);color:#fff;border-radius:6px;padding:3px 8px;font-size:0.52rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">RESULT IN</span>':''}</div>
       <div class="matchup-teams">
         <div class="pick-option ${picked===teamA?'selected':''}" onclick="setPick('${id}','${teamA}',this)" style="${aWon?'border-color:rgb(16,140,80);background:rgba(16,140,80,0.07);':''}">
           <div class="pick-radio"></div><span class="pick-team-name">${flagA}${teamA}</span>${aWon?'<span style="margin-left:auto;font-size:0.65rem;font-weight:700;color:rgb(16,140,80);">✓ WON</span>':''}
@@ -2106,8 +2111,8 @@ function pickFromTeams(slot,id,label){
       <div class="matchup">
         <div class="matchup-header">
           <span>${slot}</span>
-          <span class="tag" style="font-size:0.52rem;border-radius:12px;padding:2px 8px;">${label}</span>
-          ${actualWinner ? '<span class="tag" style="background:rgb(16,140,80);color:#fff;border-radius:12px;padding:2px 8px;font-size:0.52rem;font-weight:700;">RESULT IN</span>' : ''}
+          <span class="tag" style="font-size:0.52rem;border-radius:6px;padding:3px 8px;display:inline-flex;align-items:center;justify-content:center;">${label}</span>
+          ${actualWinner ? '<span class="tag" style="background:rgb(16,140,80);color:#fff;border-radius:6px;padding:3px 8px;font-size:0.52rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">RESULT IN</span>' : ''}
         </div>
         <div class="matchup-teams">
           <div class="pick-option ${picked===teamA?'selected':''}" onclick="setPick('${id}','${teamA}',this)"
@@ -2128,7 +2133,7 @@ function pickFromTeams(slot,id,label){
   // Otherwise dropdown
   return `
     <div class="matchup">
-      <div class="matchup-header"><span>${slot}</span><span class="tag" style="font-size:0.52rem">${label}</span></div>
+      <div class="matchup-header"><span>${slot}</span><span class="tag" style="font-size:0.52rem;border-radius:6px;padding:3px 8px;display:inline-flex;align-items:center;justify-content:center;">${label}</span></div>
       <div class="matchup-teams">
         <div class="select-label">Select Winner</div>
         <select onchange="setPick('${id}',this.value,null)">
@@ -2879,22 +2884,22 @@ function clearThirdPlace() {
 
 // All R32 slot definitions — placeholder label → slot id
 const R32_SLOTS = [
-  {id:'r32_1',  a:'2nd Group A', b:'2nd Group B'},
-  {id:'r32_2',  a:'1st Group E', b:'3rd Group A/B/C/D/F'},
-  {id:'r32_3',  a:'1st Group F', b:'2nd Group C'},
-  {id:'r32_4',  a:'1st Group C', b:'2nd Group F'},
-  {id:'r32_5',  a:'2nd Group E', b:'2nd Group I'},
-  {id:'r32_6',  a:'1st Group I', b:'3rd Group C/D/F/G/H'},
-  {id:'r32_7',  a:'1st Group A', b:'3rd Group C/E/F/H/I'},
-  {id:'r32_8',  a:'1st Group L', b:'3rd Group E/H/I/J/K'},
-  {id:'r32_9',  a:'1st Group G', b:'3rd Group A/E/H/I/J'},
-  {id:'r32_10', a:'1st Group D', b:'3rd Group B/E/F/I/J'},
-  {id:'r32_11', a:'2nd Group K', b:'2nd Group L'},
-  {id:'r32_12', a:'1st Group H', b:'2nd Group J'},
-  {id:'r32_13', a:'1st Group B', b:'3rd Group E/F/G/I/J'},
-  {id:'r32_14', a:'2nd Group D', b:'2nd Group G'},
-  {id:'r32_15', a:'1st Group J', b:'2nd Group H'},
-  {id:'r32_16', a:'1st Group K', b:'3rd Group D/E/I/J/L'},
+  {id:'r32_1',  label:'R32 Match 1',  a:'2nd Group A', b:'2nd Group B'},
+  {id:'r32_2',  label:'R32 Match 2',  a:'1st Group E', b:'3rd Group A/B/C/D/F'},
+  {id:'r32_3',  label:'R32 Match 3',  a:'1st Group F', b:'2nd Group C'},
+  {id:'r32_4',  label:'R32 Match 4',  a:'1st Group C', b:'2nd Group F'},
+  {id:'r32_5',  label:'R32 Match 5',  a:'2nd Group E', b:'2nd Group I'},
+  {id:'r32_6',  label:'R32 Match 6',  a:'1st Group I', b:'3rd Group C/D/F/G/H'},
+  {id:'r32_7',  label:'R32 Match 7',  a:'1st Group A', b:'3rd Group C/E/F/H/I'},
+  {id:'r32_8',  label:'R32 Match 8',  a:'1st Group L', b:'3rd Group E/H/I/J/K'},
+  {id:'r32_9',  label:'R32 Match 9',  a:'1st Group G', b:'3rd Group A/E/H/I/J'},
+  {id:'r32_10', label:'R32 Match 10', a:'1st Group D', b:'3rd Group B/E/F/I/J'},
+  {id:'r32_11', label:'R32 Match 11', a:'2nd Group K', b:'2nd Group L'},
+  {id:'r32_12', label:'R32 Match 12', a:'1st Group H', b:'2nd Group J'},
+  {id:'r32_13', label:'R32 Match 13', a:'1st Group B', b:'3rd Group E/F/G/I/J'},
+  {id:'r32_14', label:'R32 Match 14', a:'2nd Group D', b:'2nd Group G'},
+  {id:'r32_15', label:'R32 Match 15', a:'1st Group J', b:'2nd Group H'},
+  {id:'r32_16', label:'R32 Match 16', a:'1st Group K', b:'3rd Group D/E/I/J/L'},
 ];
 
 const KNOCKOUT_SLOTS = [
