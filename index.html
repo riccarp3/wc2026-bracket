@@ -477,7 +477,7 @@
   /* ===== BONUS ===== */
   .bonus-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 14px;
     margin-top: 12px;
   }
@@ -761,14 +761,14 @@
   .lb-row:last-child { border-bottom: none; }
 
   .lb-rank { font-size: 1.12rem; font-weight: 700; color: var(--text-light); }
-  .lb-rank.gold { color: var(--purple); }
-  .lb-rank.silver { color: var(--indigo); }
-  .lb-rank.bronze { color: var(--dark-indigo); }
+  .lb-rank.gold   { color: #fff; background: #c9a800; border-radius: 20px; padding: 2px 9px; font-size: 0.85rem; }
+  .lb-rank.silver { color: #fff; background: #8a9bb0; border-radius: 20px; padding: 2px 9px; font-size: 0.85rem; }
+  .lb-rank.bronze { color: #fff; background: #a0633a; border-radius: 20px; padding: 2px 9px; font-size: 0.85rem; }
 
   .lb-name { font-weight: 700; font-size: 0.92rem; }
   .lb-pick { font-size: 0.92rem; color: var(--text-light); font-style: italic; }
   .lb-score { font-size: 1.12rem; font-weight: 700; color: var(--purple); text-align: right; }
-  .lb-poss { font-size: 0.92rem; font-weight: 600; color: var(--indigo); text-align: right; }
+  .lb-poss { font-size: 1.12rem; font-weight: 600; color: var(--indigo); text-align: right; }
   .lb-champ { font-size: 1.12rem; text-align: right; }
 
   .lb-empty {
@@ -1171,10 +1171,9 @@
     <div class="divider"></div>
     <div class="section-title">⚙️ Rules &amp; Creative Wrinkles</div>
     <div class="info-box" style="margin-bottom:12px;"><strong>Phase 1 Deadline:</strong> Group stage picks must be submitted before <strong>June 11, 2026 at 3:00 PM ET</strong> (tournament kickoff). Group picks lock automatically.</div>
-    <div class="info-box" style="margin-bottom:12px;"><strong>Phase 2 Opens:</strong> The knockout bracket opens <strong>June 28, 2026</strong> once the Round of 32 matchups are confirmed. All 32 qualified teams appear in every dropdown — pick your way from R32 to the Final.</div>
-    <div class="info-box" style="margin-bottom:12px;"><strong>3rd-place wildcards:</strong> The 8 best third-place teams advance to the R32. Those slots are TBD until group results are known — you'll still pick the R32 winner either way.</div>
-    <div class="info-box" style="margin-bottom:12px;"><strong>The Penalty Shootout Wildcard 🎲:</strong> Once per tournament, each participant may "call a shootout" on any knockout match they got wrong. If that match actually went to penalties, you recover half the points (rounded down). One per person — use it wisely.</div>
-    <div class="info-box"><strong>Team-building twist:</strong> Consider randomly assigning each participant a national team and awarding a separate prize to whoever's assigned team goes furthest — totally independent of the main bracket competition.</div>
+    <div class="info-box" style="margin-bottom:12px;"><strong>Phase 2 Opens:</strong> The Admin will open the Knockout Bracket by <strong>June 28, 2026</strong> once the Round of 32 matchups are confirmed. All 32 qualified teams appear in every dropdown — pick your way from R32 to the Final.</div>
+    <div class="info-box" style="margin-bottom:12px;"><strong>3rd-place wildcards:</strong> The 8 best third-place teams advance to the R32.</div>
+
   </div>
 
   <!-- ===================== LEADERBOARD ===================== -->
@@ -1190,11 +1189,11 @@
         <div>Participant</div>
         <div style="text-align:center">Champion</div>
         <div style="text-align:center">PTS</div>
-        <div style="text-align:center">👟 Boot</div>
-        <div style="text-align:center">💥 Upset</div>
-        <div style="text-align:center">🥿 Cinderella</div>
-        <div style="text-align:center">🌎 Host Nation</div>
-        <div style="text-align:center">🟥 Final</div>
+        <div style="text-align:center"><span style="font-size:1.1rem;">👟</span> Boot</div>
+        <div style="text-align:center"><span style="font-size:1.1rem;">💥</span> Upset</div>
+        <div style="text-align:center"><span style="font-size:1.1rem;">🥿</span> Cinderella</div>
+        <div style="text-align:center"><span style="font-size:1.1rem;">🌎</span> Host</div>
+        <div style="text-align:center"><span style="font-size:1.1rem;">🟥</span> Final</div>
       </div>
       <div id="leaderboard-rows">
         <div class="lb-empty"><span class="empty-icon">📋</span>No entries yet. Be the first to submit!</div>
@@ -1305,7 +1304,7 @@
 
     <div class="config-panel">
       <h3>Enter Bonus Outcomes</h3>
-      <div id="bonus-results-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;"></div>
+      <div id="bonus-results-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;"></div>
       <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn" onclick="saveBonusResults()">Save Bonus Results</button>
         <button class="btn secondary" onclick="clearBonusResults()">Clear All</button>
@@ -1573,7 +1572,7 @@ function renderR32AssignmentGrid() {
     return `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:5px;overflow:hidden;">
         <div style="background:linear-gradient(135deg,var(--dark-indigo),rgb(60,22,140));padding:5px 10px;font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.9);display:flex;justify-content:space-between;">
-          <span>${slot.slot}</span><span style="opacity:0.7;font-size:0.6rem;">${slot.pool}</span>
+          <span>R32 Match ${slot.slot.replace('M','')}</span><span style="opacity:0.7;font-size:0.6rem;">${slot.pool}</span>
         </div>
         <div style="padding:8px 10px;">
           <select id="r32a_${slot.id}" onchange="updateR32Assignment('${slot.id}', this.value)"
@@ -1845,7 +1844,7 @@ function renderGroups() {
           <div class="team-row">
             <span style="font-size:1.05rem">${FLAGS[team]||'🏳️'}</span>
             <span class="team-name">${team}</span>
-            <span class="team-seed">${i===0?'★ POT 1':''}</span>
+            <span class="team-seed"></span>
           </div>`).join('')}
       </div>
     </div>`).join('');
@@ -1925,7 +1924,7 @@ function renderBracketPicks() {
       return `
         <div class="bracket-section ${isGS ? 'gs-section' : ''}">
           <div class="round-label">
-            ${round.label} · ${round.pts} pt${round.pts!==1?'s':''} each
+            ${round.label} · ${round.pts} pt${round.pts!==1?'s':''}${(round.id==='tp'||round.id==='f')?'':' each'}
             ${locked ? '<span style="margin-left:8px;font-size:0.68rem;color:var(--red);font-weight:700;">🔒 LOCKED</span>' : ''}
           </div>
           ${isGS ? generateMatchups(round) : '<div class="matchup-grid">' + generateMatchups(round) + '</div>'}
@@ -2107,8 +2106,8 @@ function pickFromTeams(slot,id,label){
       <div class="matchup">
         <div class="matchup-header">
           <span>${slot}</span>
-          <span class="tag" style="font-size:0.52rem">${label}</span>
-          ${actualWinner ? '<span class="tag" style="background:rgba(16,140,80,0.3);color:rgb(16,140,80);">RESULT IN</span>' : ''}
+          <span class="tag" style="font-size:0.52rem;border-radius:12px;padding:2px 8px;">${label}</span>
+          ${actualWinner ? '<span class="tag" style="background:rgb(16,140,80);color:#fff;border-radius:12px;padding:2px 8px;font-size:0.52rem;font-weight:700;">RESULT IN</span>' : ''}
         </div>
         <div class="matchup-teams">
           <div class="pick-option ${picked===teamA?'selected':''}" onclick="setPick('${id}','${teamA}',this)"
