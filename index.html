@@ -1114,6 +1114,7 @@
     <div class="bracket-section">
       <div class="section-title">🎯 Bonus Challenges</div>
       <p style="font-size:0.8rem;color:var(--text-light);margin-bottom:16px;">Tiebreakers and fun wrinkles. Lock these in before tournament kickoff (June 11, 3:00 PM ET).</p>
+      <div id="bonus-lock-msg" style="display:none;text-align:center;padding:12px 0 4px;color:var(--text-light);font-size:0.9rem;">🔒 Bonus picks are locked — the knockout bracket has begun.</div>
       <div class="bonus-grid" id="bonus-grid"></div>
     </div>
 
@@ -1190,8 +1191,8 @@
 
     <div style="border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(79,74,74,0.08);">
       <div class="lb-header">
-        <div>#</div>
-        <div>Participant</div>
+        <div style="text-align:center">#</div>
+        <div style="text-align:center">Participant</div>
         <div style="text-align:center">Champion</div>
         <div style="text-align:center">PTS</div>
         <div style="text-align:center"><span style="font-size:1.1rem;">👟</span> Boot</div>
@@ -2163,9 +2164,10 @@ function renderBonusQuestions(){
   const locked = getPhase() >= 2;
   if (locked) {
     const grid = document.getElementById('bonus-grid');
-    const lockMsg = '<div style="text-align:center;padding:24px;color:var(--text-light);font-size:0.95rem;">🔒 Bonus picks are locked — the knockout bracket has begun.</div>';
-    // Show locked picks as read-only
-    grid.innerHTML = lockMsg + BONUS_QUESTIONS.map(q=>{
+    const lockMsg = document.getElementById('bonus-lock-msg');
+    if (lockMsg) lockMsg.style.display = 'block';
+    // Show locked picks as read-only tiles (preserves 2x3 grid)
+    grid.innerHTML = BONUS_QUESTIONS.map(q=>{
       const val = bonusPicks[q.id] || '—';
       return `
         <div class="bonus-card" style="opacity:0.7;">
@@ -2179,6 +2181,8 @@ function renderBonusQuestions(){
     }).join('');
     return;
   }
+  const lockMsg = document.getElementById('bonus-lock-msg');
+  if (lockMsg) lockMsg.style.display = 'none';
   document.getElementById('bonus-grid').innerHTML = BONUS_QUESTIONS.map(q=>{
     let inputHtml='';
     if(q.type==='select'){
