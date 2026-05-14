@@ -1096,9 +1096,10 @@
     <div class="name-input-row">
       <div class="form-group">
         <label>Your Name</label>
-        <input type="text" id="participant-name" placeholder="Enter your full name" />
+        <input type="text" id="participant-name" placeholder="Username" />
       </div>
       <button class="btn" onclick="saveName()">Save</button>
+      <button class="btn secondary" onclick="clearMyPicks()" style="white-space:nowrap;">🗑 Reset My Picks</button>
     </div>
 
     <div class="progress-label">
@@ -1131,10 +1132,6 @@
       <div id="submit-status-p2" style="font-size:0.78rem;color:var(--text-light);min-height:20px;"></div>
     </div>
 
-    <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);text-align:center;">
-      <button class="btn danger" onclick="clearMyPicks()" style="font-size:0.72rem;">🗑 Clear My Picks &amp; Start Over</button>
-      <div style="font-size:0.68rem;color:var(--text-light);margin-top:6px;">Clears your name, all picks, and bonus selections from this device.</div>
-    </div>
   </div>
 
   <!-- ===================== SCORING ===================== -->
@@ -1623,6 +1620,7 @@ function clearR32Assignments() {
   R32_THIRD_SLOTS.forEach(slot => delete groupResults[slot.pool]);
   renderR32AssignmentGrid();
   renderBracketPicks();
+  pushAdminResults();
 }
 
 
@@ -2514,25 +2512,19 @@ function saveName(){
 
 // ===================== CLEAR =====================
 async function clearLeaderboard(){
-  if(!confirm('Clear ALL bracket entries from SharePoint? This cannot be undone.')) return;
-  if(!spSiteUrl){
-    localEntries = [];
-    localStorage.removeItem('wc2026_local');
-    renderLeaderboardRows([]);
-    showToast('Local leaderboard cleared.');
-    return;
-  }
+  if(!confirm('Clear ALL bracket entries from the shared leaderboard? This cannot be undone.')) return;
   try {
-    const data = await spRequest(`${getApiBase()}/items?$select=Id&$top=500`);
-    const items = data?.d?.results || [];
-    await Promise.all(items.map(item =>
-      spRequest(`${getApiBase()}/items(${item.Id})`, 'DELETE', null)
-    ));
+    const res = await fetch(LEADERBOARD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries: [], phase2Unlocked: isPhase2UnlockedByAdmin() })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     localEntries = [];
     localStorage.removeItem('wc2026_local');
     renderLeaderboardRows([]);
-    showToast('All entries cleared from SharePoint.', 'ok');
-  } catch(e){
+    showToast('All entries cleared ✓', 'ok');
+  } catch(e) {
     showToast('Error clearing: ' + (e.message||'').substring(0,80), 'error');
   }
 }
@@ -2611,6 +2603,7 @@ function clearBonusResults() {
   bonusResults = {};
   localStorage.removeItem('wc2026_bonus_results');
   renderBonusResultsForm();
+  pushAdminResults();
 }
 
 function scoreBonusPicks(bonusPicksJson) {
@@ -2872,7 +2865,12 @@ function saveThirdPlace() {
 function clearThirdPlace() {
   thirdPlaceQualifiers = [];
   localStorage.removeItem('wc2026_3rd_qualifiers');
+  // Also clear any r32 pool assignments from groupResults
+  _r32SlotDefs.forEach(s => { delete groupResults[s.pool]; });
+  localStorage.setItem('wc2026_group_results', JSON.stringify(groupResults));
   renderThirdPlaceGrid();
+  renderR32AssignmentGrid();
+  pushAdminResults();
   document.getElementById('third-place-status').textContent = 'Cleared.';
 }
 
@@ -3027,6 +3025,7 @@ function clearGroupResults() {
   localStorage.removeItem('wc2026_group_results');
   renderGroupResultsForm();
   renderBracketPicks();
+  pushAdminResults();
   document.getElementById('group-results-status').textContent = 'Group results cleared.';
 }
 
@@ -3139,6 +3138,7 @@ function clearKnockoutResults() {
   localStorage.removeItem('wc2026_knockout_results');
   renderKnockoutResultsForm();
   renderBracketPicks();
+  pushAdminResults();
   document.getElementById('knockout-results-status').textContent = 'Knockout results cleared.';
 }
 
