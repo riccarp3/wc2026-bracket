@@ -2186,7 +2186,7 @@ function renderBonusQuestions(){
     } else if(q.type==='range'){
       const val=bonusPicks[q.id]||q.default;
       inputHtml=`<div class="bonus-range-row">
-        <input type="range" min="${q.min}" max="${q.max}" value="${val}"
+        <input type="range" id="range_input_${q.id}" min="${q.min}" max="${q.max}" value="${val}"
           oninput="setBonus('${q.id}',this.value,null);document.getElementById('range_${q.id}').textContent=this.value"/>
         <span class="range-val" id="range_${q.id}">${val}</span>
       </div>`;
@@ -2404,21 +2404,25 @@ async function loadLeaderboard(retryCount = 0){
   // Netlify Blobs path — primary
   const remote = await jsonbinGet();
   if (remote !== null) {
-    // Merge: remote is source of truth, local entry for current user takes priority
+    // Remote is source of truth.
+    // Only merge local picks into an existing remote entry — never re-add
+    // a local entry that admin has cleared from the remote leaderboard.
     const merged = [...remote];
-    localEntries.forEach(local => {
-      const idx = merged.findIndex(e => e.ParticipantName === local.ParticipantName);
-      if (idx >= 0) merged[idx] = local;
-      else merged.push(local);
-    });
+    if (remote.length > 0) {
+      localEntries.forEach(local => {
+        const idx = merged.findIndex(e => e.ParticipantName === local.ParticipantName);
+        if (idx >= 0) merged[idx] = local; // update existing with latest local picks
+      });
+    }
     // Rescore all with latest admin results
     const rescored = merged.map(e => ({
       ...e,
       Points: scoreOneBracket(e.BracketPicks || '{}') + scoreBonusPicks(e.BonusPicks || '{}'),
       MaxPossible: calcMaxPossible(e.BracketPicks || '{}'),
     }));
-    // Save to cache for next page load
-    localStorage.setItem('wc2026_lb_cache', JSON.stringify(merged));
+    // Save to cache for next page load (clear cache if remote was wiped)
+    if (merged.length === 0) localStorage.removeItem('wc2026_lb_cache');
+    else localStorage.setItem('wc2026_lb_cache', JSON.stringify(merged));
     renderLeaderboardRows(rescored);
     if (lastUpdEl) lastUpdEl.textContent = 'Updated ' + new Date().toLocaleTimeString();
     return;
