@@ -2678,6 +2678,13 @@ function clearMyPicks() {
   localStorage.removeItem('wc2026_bonus');
   localStorage.removeItem('wc2026_name');
   document.getElementById('participant-name').value = '';
+  // Reset slider DOM elements to their defaults
+  BONUS_QUESTIONS.filter(q => q.type === 'range').forEach(q => {
+    const slider = document.getElementById(`range_input_${q.id}`);
+    const display = document.getElementById(`range_${q.id}`);
+    if (slider) slider.value = q.default;
+    if (display) display.textContent = q.default;
+  });
   renderBracketPicks();
   renderBonusQuestions();
   updateProgress();
