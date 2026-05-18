@@ -2689,6 +2689,7 @@ function clearMyPicks() {
     if (slider) slider.value = q.default;
     if (display) display.textContent = q.default;
   });
+  renderGroups();
   renderBracketPicks();
   renderBonusQuestions();
   updateProgress();
