@@ -1905,7 +1905,11 @@ function renderGroupStagePicks() {
 }
 
 function setGroupPick(id, value) {
-  picks[id] = value;
+  if (value === '') {
+    delete picks[id];
+  } else {
+    picks[id] = value;
+  }
   localStorage.setItem('wc2026_picks', JSON.stringify(picks));
   updateProgress();
   // Re-render R32 so team name labels update in matchup cards
@@ -2689,10 +2693,16 @@ function clearMyPicks() {
     if (slider) slider.value = q.default;
     if (display) display.textContent = q.default;
   });
-  renderGroups();
-  renderBracketPicks();
-  renderBonusQuestions();
-  updateProgress();
+  // Use setTimeout to let the confirm dialog fully close before re-rendering
+  // This prevents visibilitychange from interfering
+  setTimeout(() => {
+    picks = {};
+    localStorage.removeItem('wc2026_picks');
+    renderGroups();
+    renderBracketPicks();
+    renderBonusQuestions();
+    updateProgress();
+  }, 50);
   showToast('Picks cleared — fresh start!', 'ok');
 }
 
