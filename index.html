@@ -1634,33 +1634,29 @@ async function jsonbinGet() {
     // Apply shared admin results so all participants see real team names
     if (data.adminResults && !adminUnlocked) {
       const ar = data.adminResults;
-      if (ar.groupResults && Object.keys(ar.groupResults).length > 0) {
-        groupResults = { ...ar.groupResults };
-        localStorage.setItem('wc2026_group_results', JSON.stringify(groupResults));
-      }
-      if (ar.knockoutResults && Object.keys(ar.knockoutResults).length > 0) {
-        knockoutResults = { ...ar.knockoutResults };
-        localStorage.setItem('wc2026_knockout_results', JSON.stringify(knockoutResults));
-      }
-      if (ar.r32Assignments && Object.keys(ar.r32Assignments).length > 0) {
-        r32Assignments = { ...ar.r32Assignments };
-        localStorage.setItem('wc2026_r32_assignments', JSON.stringify(r32Assignments));
-        // Merge into groupResults so resolveTeam sees pool assignments
-        _r32SlotDefs.forEach(s => { if (r32Assignments[s.id]) groupResults[s.pool] = r32Assignments[s.id]; });
-      }
-      if (ar.thirdPlaceQualifiers && ar.thirdPlaceQualifiers.length > 0) {
-        thirdPlaceQualifiers = [...ar.thirdPlaceQualifiers];
-        localStorage.setItem('wc2026_3rd_qualifiers', JSON.stringify(thirdPlaceQualifiers));
-      }
-      if (ar.qualifierResults && Object.keys(ar.qualifierResults).length > 0) {
-        qualifierResults = { ...ar.qualifierResults };
-        localStorage.setItem('wc2026_qualifiers', JSON.stringify(qualifierResults));
-        Object.assign(groupResults, qualifierResults);
-      }
-      if (ar.bonusResults && Object.keys(ar.bonusResults).length > 0) {
-        bonusResults = { ...ar.bonusResults };
-        localStorage.setItem('wc2026_bonus_results', JSON.stringify(bonusResults));
-      }
+
+      // Always sync — even empty objects clear stale cached results
+      groupResults = ar.groupResults ? { ...ar.groupResults } : {};
+      localStorage.setItem('wc2026_group_results', JSON.stringify(groupResults));
+
+      knockoutResults = ar.knockoutResults ? { ...ar.knockoutResults } : {};
+      localStorage.setItem('wc2026_knockout_results', JSON.stringify(knockoutResults));
+
+      r32Assignments = ar.r32Assignments ? { ...ar.r32Assignments } : {};
+      localStorage.setItem('wc2026_r32_assignments', JSON.stringify(r32Assignments));
+      // Merge into groupResults so resolveTeam sees pool assignments
+      _r32SlotDefs.forEach(s => { if (r32Assignments[s.id]) groupResults[s.pool] = r32Assignments[s.id]; });
+
+      thirdPlaceQualifiers = ar.thirdPlaceQualifiers ? [...ar.thirdPlaceQualifiers] : [];
+      localStorage.setItem('wc2026_3rd_qualifiers', JSON.stringify(thirdPlaceQualifiers));
+
+      qualifierResults = ar.qualifierResults ? { ...ar.qualifierResults } : {};
+      localStorage.setItem('wc2026_qualifiers', JSON.stringify(qualifierResults));
+      Object.assign(groupResults, qualifierResults);
+
+      bonusResults = ar.bonusResults ? { ...ar.bonusResults } : {};
+      localStorage.setItem('wc2026_bonus_results', JSON.stringify(bonusResults));
+
       renderBracketPicks();
     }
 
