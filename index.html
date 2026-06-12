@@ -2812,7 +2812,7 @@ function renderThirdPlaceGrid() {
   if (!grid) return;
   const letters = ['A','B','C','D','E','F','G','H','I','J','K','L'];
   grid.innerHTML = letters.map(letter => {
-    const team = groupResults[`3rd Group ${letter}`] || picks[`gs_3rd_${letter}`] || `3rd Group ${letter}`;
+    const team = groupResults[`3rd Group ${letter}`] || `3rd Group ${letter}`;
     const selected = thirdPlaceQualifiers.includes(letter);
     const flag = FLAGS[team] || '';
     return `
