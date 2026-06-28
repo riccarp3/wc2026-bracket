@@ -1296,7 +1296,6 @@
         <button class="btn" onclick="reopenForLateEntries()" style="background:var(--indigo);color:#fff;">🔄 Re-open for Late Entries</button>
         <span id="phase2-status" style="font-size:0.78rem;color:var(--text-light);"></span>
       </div>
-      <p style="font-size:0.75rem;color:var(--text-light);margin-top:10px;">Use <strong>Re-open for Late Entries</strong> to let players who already picked re-do their knockout picks (e.g. after a bracket correction). This clears their old picks when they next open the site.</p>
     </div>
 
     <div class="divider"></div>
@@ -1403,7 +1402,7 @@ const BONUS_QUESTIONS = [
 
 // ===================== STATE =====================
 let picks             = JSON.parse(localStorage.getItem('wc2026_picks')           || '{}');
-// v2: bracket structure changed June 28 2026 — clear stale knockout picks
+// Clear stale knockout picks if bracket version has changed
 (function() {
   const BRACKET_VERSION = 'v2_2026-06-28';
   if (localStorage.getItem('wc2026_bracket_version') !== BRACKET_VERSION) {
@@ -1494,13 +1493,10 @@ async function unlockPhase2() {
 }
 
 async function reopenForLateEntries() {
-  // Bump bracket version — all clients will clear stale knockout picks on next visit
   const newVersion = 'v_' + Date.now();
   localStorage.setItem('wc2026_bracket_version', newVersion);
   localStorage.setItem('wc2026_phase2_unlocked', 'true');
-  // Push to server via adminResults so all clients receive new version
   await pushAdminResults();
-  // Also push phase2 unlock
   const remote = await jsonbinGet();
   await jsonbinPut(remote || [], true);
   const el = document.getElementById('phase2-status');
@@ -1688,10 +1684,10 @@ async function jsonbinGet() {
       bonusResults = ar.bonusResults ? { ...ar.bonusResults } : {};
       localStorage.setItem('wc2026_bonus_results', JSON.stringify(bonusResults));
 
-      // Sync bracket version — if admin bumped it, clear stale knockout picks for this client
+      // If admin bumped bracketVersion, clear stale knockout picks for this client
       if (ar.bracketVersion) {
-        const localVersion = localStorage.getItem('wc2026_bracket_version');
-        if (localVersion !== ar.bracketVersion) {
+        const localVer = localStorage.getItem('wc2026_bracket_version');
+        if (localVer !== ar.bracketVersion) {
           const knockoutKeys = Object.keys(picks).filter(k =>
             k.startsWith('r32_') || k.startsWith('r16_') ||
             k.startsWith('qf_')  || k.startsWith('sf_')  ||
@@ -3070,7 +3066,6 @@ function saveGroupResults() {
   pushAdminResults();
   document.getElementById('group-results-status').textContent = '✓ Group results saved. Bracket labels updated for all users.';
   setTimeout(() => { document.getElementById('group-results-status').textContent = ''; }, 4000);
-  // Re-render bracket picks AND knockout form so R32 dropdowns show real team names
   renderBracketPicks();
   renderKnockoutResultsForm();
   showToast('Group results saved ✓', 'ok');
