@@ -1658,7 +1658,7 @@ async function jsonbinGet() {
       localStorage.setItem('wc2026_bonus_results', JSON.stringify(bonusResults));
 
       renderBracketPicks();
-      renderKnockoutResultsForm(); // refresh admin R32 dropdowns with real team names
+      renderKnockoutResultsForm();
     }
 
     // Sync phase2 unlock flag so all participants see it
@@ -3033,7 +3033,7 @@ function saveGroupResults() {
   pushAdminResults();
   document.getElementById('group-results-status').textContent = '✓ Group results saved. Bracket labels updated for all users.';
   setTimeout(() => { document.getElementById('group-results-status').textContent = ''; }, 4000);
-  // Re-render bracket picks AND knockout results form so R32 dropdowns show real team names
+  // Re-render bracket picks AND knockout form so R32 dropdowns show real team names
   renderBracketPicks();
   renderKnockoutResultsForm();
   showToast('Group results saved ✓', 'ok');
@@ -3091,15 +3091,13 @@ function renderKnockoutResultsForm() {
             teamA = sf1Winner && sf1Teams[0] && sf1Teams[1] ? (sf1Winner === sf1Teams[0] ? sf1Teams[1] : sf1Teams[0]) : null;
             teamB = sf2Winner && sf2Teams[0] && sf2Teams[1] ? (sf2Winner === sf2Teams[0] ? sf2Teams[1] : sf2Teams[0]) : null;
           } else if (isR32) {
-            // R32: resolve teams directly from groupResults/knockoutResults
-            // Use resolveTeam but ALWAYS fall back to label (never null) so bothKnown stays true
-            const resolvedA = groupResults[slot.a] || knockoutResults[slot.a] || null;
-            const resolvedB = groupResults[slot.b] || knockoutResults[slot.b] || null;
-            // For 3rd-place pool labels, use resolveTeam which handles pool matching
+            // R32: read directly from groupResults for 1st/2nd labels; use resolveTeam for 3rd pool labels
             const isPoolA = slot.a.startsWith('3rd Group ');
             const isPoolB = slot.b.startsWith('3rd Group ');
-            teamA = isPoolA ? (resolveTeam(slot.a) !== slot.a ? resolveTeam(slot.a) : slot.a) : (resolvedA || slot.a);
-            teamB = isPoolB ? (resolveTeam(slot.b) !== slot.b ? resolveTeam(slot.b) : slot.b) : (resolvedB || slot.b);
+            teamA = isPoolA ? (resolveTeam(slot.a) !== slot.a ? resolveTeam(slot.a) : slot.a)
+                            : (groupResults[slot.a] || knockoutResults[slot.a] || slot.a);
+            teamB = isPoolB ? (resolveTeam(slot.b) !== slot.b ? resolveTeam(slot.b) : slot.b)
+                            : (groupResults[slot.b] || knockoutResults[slot.b] || slot.b);
           } else {
             // R16 and beyond: teams come from prior knockout results
             teamA = knockoutResults[slot.a] || null;
