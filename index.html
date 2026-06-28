@@ -2072,8 +2072,8 @@ const SLOT_FEEDERS = {
   'qf_2':  ['r16_3',  'r16_4'],   // M99: W-M91 vs W-M92
   'qf_3':  ['r16_5',  'r16_6'],   // M98: W-M93 vs W-M94
   'qf_4':  ['r16_7',  'r16_8'],   // M100: W-M95 vs W-M96
-  'sf_1':  ['qf_1',   'qf_2'],
-  'sf_2':  ['qf_3',   'qf_4'],
+  'sf_1':  ['qf_1',   'qf_3'],   // M101: W-M97 vs W-M98 (left side)
+  'sf_2':  ['qf_2',   'qf_4'],   // M102: W-M99 vs W-M100 (right side)
   '3p_1':  ['sf_1',   'sf_2'],
   'final_1':['sf_1',  'sf_2'],
 };
@@ -2970,8 +2970,8 @@ const KNOCKOUT_SLOTS = [
   {id:'qf_2', label:'QF 2 (M99)',  a:'r16_3', b:'r16_4'},
   {id:'qf_3', label:'QF 3 (M98)',  a:'r16_5', b:'r16_6'},
   {id:'qf_4', label:'QF 4 (M100)', a:'r16_7', b:'r16_8'},
-  {id:'sf_1', label:'SF 1 (M101)', a:'qf_1', b:'qf_2'},
-  {id:'sf_2', label:'SF 2 (M102)', a:'qf_3', b:'qf_4'},
+  {id:'sf_1', label:'SF 1 (M101)', a:'qf_1', b:'qf_3'},  // W-M97 vs W-M98
+  {id:'sf_2', label:'SF 2 (M102)', a:'qf_2', b:'qf_4'},  // W-M99 vs W-M100
   {id:'3p_1',    label:'3rd Place Match', a:'sf_1', b:'sf_2'},
   {id:'final_1', label:'Final',           a:'sf_1', b:'sf_2'},
 ];
