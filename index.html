@@ -2017,7 +2017,7 @@ function matchupCard(slot,teamA,teamB,id,badge){
 
 // Map each knockout slot to its two feeder slots
 const SLOT_FEEDERS = {
-  // R16 fed by R32 winners — correct FIFA bracket pairings
+  // R16 — correct FIFA bracket pairings
   'r16_1': ['r32_2',  'r32_6'],   // M89: W-M74 (Ger/Par) vs W-M77 (Fra/Swe)
   'r16_2': ['r32_1',  'r32_3'],   // M90: W-M73 (Can/SA)  vs W-M75 (Ned/Mar)
   'r16_3': ['r32_4',  'r32_5'],   // M91: W-M76 (Bra/Jpn) vs W-M78 (Nor/IvC)
@@ -2026,18 +2026,17 @@ const SLOT_FEEDERS = {
   'r16_6': ['r32_9',  'r32_10'],  // M94: W-M81 (USA/Bos) vs W-M82 (Bel/Sen)
   'r16_7': ['r32_14', 'r32_16'],  // M95: W-M86 (Arg/CpV) vs W-M88 (Aus/Egy)
   'r16_8': ['r32_13', 'r32_15'],  // M96: W-M85 (Swi/Alg) vs W-M87 (Col/Gha)
-  // QF fed by R16 winners — correct FIFA bracket pairings
-  'qf_1':  ['r16_1',  'r16_2'],   // M97: W-M89 vs W-M90
-  'qf_2':  ['r16_3',  'r16_4'],   // M99: W-M91 vs W-M92
-  'qf_3':  ['r16_5',  'r16_6'],   // M98: W-M93 vs W-M94
-  'qf_4':  ['r16_7',  'r16_8'],   // M100: W-M95 vs W-M96
-  // SF fed by QF winners — M101: W-M97 vs W-M99, M102: W-M98 vs W-M100
+  // QF — correct FIFA bracket pairings
+  'qf_1':  ['r16_1',  'r16_2'],   // M97: W-M89 vs W-M90  (left top)
+  'qf_2':  ['r16_3',  'r16_4'],   // M99: W-M91 vs W-M92  (right top)
+  'qf_3':  ['r16_5',  'r16_6'],   // M98: W-M93 vs W-M94  (left bottom)
+  'qf_4':  ['r16_7',  'r16_8'],   // M100: W-M95 vs W-M96 (right bottom)
+  // SF — M101: W-M97 vs W-M99, M102: W-M98 vs W-M100
   'sf_1':  ['qf_1',   'qf_2'],
   'sf_2':  ['qf_3',   'qf_4'],
-  // 3rd place fed by SF losers
-  '3p_1':  ['sf_1',   'sf_2'],
-  // Final fed by SF winners
-  'final_1':['sf_1',  'sf_2'],
+  // 3rd place & Final
+  '3p_1':    ['sf_1', 'sf_2'],
+  'final_1': ['sf_1', 'sf_2'],
 };
 
 // Get the two possible teams for a knockout slot
@@ -2920,32 +2919,20 @@ const R32_SLOTS = [
 ];
 
 const KNOCKOUT_SLOTS = [
-  // R16 — correct FIFA bracket pairings (from official bracket image)
-  // M89: W-M74 vs W-M77 (Germany/Par vs France/Swe)
-  {id:'r16_1',label:'R16 Match 1 (M89)', a:'r32_2',  b:'r32_6'},
-  // M90: W-M73 vs W-M75 (Canada/SA vs Netherlands/Mar)
-  {id:'r16_2',label:'R16 Match 2 (M90)', a:'r32_1',  b:'r32_3'},
-  // M91: W-M76 vs W-M78 (Brazil/Jpn vs Norway/IvC)
-  {id:'r16_3',label:'R16 Match 3 (M91)', a:'r32_4',  b:'r32_5'},
-  // M92: W-M79 vs W-M80 (Mexico/Ecu vs England/CGO)
-  {id:'r16_4',label:'R16 Match 4 (M92)', a:'r32_7',  b:'r32_8'},
-  // M93: W-M83 vs W-M84 (Portugal/Cro vs Spain/Aut)
-  {id:'r16_5',label:'R16 Match 5 (M93)', a:'r32_11', b:'r32_12'},
-  // M94: W-M81 vs W-M82 (USA/Bos vs Belgium/Sen)
-  {id:'r16_6',label:'R16 Match 6 (M94)', a:'r32_9',  b:'r32_10'},
-  // M95: W-M86 vs W-M88 (Argentina/CpV vs Australia/Egy)
-  {id:'r16_7',label:'R16 Match 7 (M95)', a:'r32_14', b:'r32_16'},
-  // M96: W-M85 vs W-M87 (Switzerland/Alg vs Colombia/Gha)
-  {id:'r16_8',label:'R16 Match 8 (M96)', a:'r32_13', b:'r32_15'},
+  // R16 — correct FIFA bracket pairings
+  {id:'r16_1',label:'R16 Match 1 (M89)', a:'r32_2',  b:'r32_6'},   // Ger/Par vs Fra/Swe
+  {id:'r16_2',label:'R16 Match 2 (M90)', a:'r32_1',  b:'r32_3'},   // Can/SA  vs Ned/Mar
+  {id:'r16_3',label:'R16 Match 3 (M91)', a:'r32_4',  b:'r32_5'},   // Bra/Jpn vs Nor/IvC
+  {id:'r16_4',label:'R16 Match 4 (M92)', a:'r32_7',  b:'r32_8'},   // Mex/Ecu vs Eng/CGO
+  {id:'r16_5',label:'R16 Match 5 (M93)', a:'r32_11', b:'r32_12'},  // Por/Cro vs Esp/Aut
+  {id:'r16_6',label:'R16 Match 6 (M94)', a:'r32_9',  b:'r32_10'},  // USA/Bos vs Bel/Sen
+  {id:'r16_7',label:'R16 Match 7 (M95)', a:'r32_14', b:'r32_16'},  // Arg/CpV vs Aus/Egy
+  {id:'r16_8',label:'R16 Match 8 (M96)', a:'r32_13', b:'r32_15'},  // Swi/Alg vs Col/Gha
   // QF — correct FIFA bracket pairings
-  // M97: W-M89 vs W-M90
-  {id:'qf_1', label:'QF 1 (M97)',  a:'r16_1', b:'r16_2'},
-  // M99: W-M91 vs W-M92
-  {id:'qf_2', label:'QF 2 (M99)',  a:'r16_3', b:'r16_4'},
-  // M98: W-M93 vs W-M94
-  {id:'qf_3', label:'QF 3 (M98)',  a:'r16_5', b:'r16_6'},
-  // M100: W-M95 vs W-M96
-  {id:'qf_4', label:'QF 4 (M100)', a:'r16_7', b:'r16_8'},
+  {id:'qf_1', label:'QF 1 (M97)',  a:'r16_1', b:'r16_2'},  // W-M89 vs W-M90
+  {id:'qf_2', label:'QF 2 (M99)',  a:'r16_3', b:'r16_4'},  // W-M91 vs W-M92
+  {id:'qf_3', label:'QF 3 (M98)',  a:'r16_5', b:'r16_6'},  // W-M93 vs W-M94
+  {id:'qf_4', label:'QF 4 (M100)', a:'r16_7', b:'r16_8'},  // W-M95 vs W-M96
   // SF — M101: W-M97 vs W-M99, M102: W-M98 vs W-M100
   {id:'sf_1', label:'SF 1 (M101)', a:'qf_1', b:'qf_2'},
   {id:'sf_2', label:'SF 2 (M102)', a:'qf_3', b:'qf_4'},
@@ -3102,7 +3089,7 @@ function renderKnockoutResultsForm() {
             teamA = sf1Winner && sf1Teams[0] && sf1Teams[1] ? (sf1Winner === sf1Teams[0] ? sf1Teams[1] : sf1Teams[0]) : null;
             teamB = sf2Winner && sf2Teams[0] && sf2Teams[1] ? (sf2Winner === sf2Teams[0] ? sf2Teams[1] : sf2Teams[0]) : null;
           } else if (isR32) {
-            // R32: read directly from groupResults for 1st/2nd labels; use resolveTeam for 3rd pool labels
+            // R32: read directly from groupResults for 1st/2nd labels; resolveTeam for 3rd pools
             const isPoolA = slot.a.startsWith('3rd Group ');
             const isPoolB = slot.b.startsWith('3rd Group ');
             teamA = isPoolA ? (resolveTeam(slot.a) !== slot.a ? resolveTeam(slot.a) : slot.a)
