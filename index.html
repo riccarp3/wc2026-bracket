@@ -1418,10 +1418,10 @@ Object.assign(groupResults, qualifierResults);
 // Phase date constants — must be here so getPhase() works on first render
 // Apply saved R32 assignments into groupResults immediately
 const _r32SlotDefs = [
-  {id:'r32_2',pool:'3rd Group A/B/C/D/F'},{id:'r32_7',pool:'3rd Group C/E/F/H/I'},
-  {id:'r32_6',pool:'3rd Group C/D/F/G/H'},{id:'r32_8',pool:'3rd Group E/H/I/J/K'},
-  {id:'r32_9',pool:'3rd Group A/B/E/H/I/J'},{id:'r32_10',pool:'3rd Group B/E/F/I/J'},
-  {id:'r32_13',pool:'3rd Group E/F/G/I/J'},{id:'r32_16',pool:'3rd Group D/E/I/J/L'},
+  {id:'r32_2', pool:'3rd Group A/B/C/D/F'}, {id:'r32_6', pool:'3rd Group C/D/F/G/H'},
+  {id:'r32_7', pool:'3rd Group C/E/F/H/I'}, {id:'r32_8', pool:'3rd Group E/H/I/J/K'},
+  {id:'r32_10',pool:'3rd Group A/E/H/I/J'}, {id:'r32_13',pool:'3rd Group E/F/G/I/J'},
+  {id:'r32_15',pool:'3rd Group D/E/I/J/L'}, {id:'r32_9', pool:'3rd Group B/E/F/I/J'},
 ];
 _r32SlotDefs.forEach(s => { if (r32Assignments[s.id]) groupResults[s.pool] = r32Assignments[s.id]; });
 const PHASE1_LOCK = new Date('2026-06-11T15:00:00-04:00');
@@ -1524,13 +1524,13 @@ function isPhase2UnlockedByAdmin() {
 // ===================== R32 THIRD-PLACE ASSIGNMENTS =====================
 const R32_THIRD_SLOTS = [
   {id:'r32_2',  slot:'M74', pool:'3rd Group A/B/C/D/F'},
-  {id:'r32_7',  slot:'M79', pool:'3rd Group C/E/F/H/I'},
   {id:'r32_6',  slot:'M77', pool:'3rd Group C/D/F/G/H'},
+  {id:'r32_7',  slot:'M79', pool:'3rd Group C/E/F/H/I'},
   {id:'r32_8',  slot:'M80', pool:'3rd Group E/H/I/J/K'},
-  {id:'r32_9',  slot:'M81', pool:'3rd Group A/B/E/H/I/J'},
-  {id:'r32_10', slot:'M82', pool:'3rd Group B/E/F/I/J'},
+  {id:'r32_10', slot:'M82', pool:'3rd Group A/E/H/I/J'},
   {id:'r32_13', slot:'M85', pool:'3rd Group E/F/G/I/J'},
-  {id:'r32_16', slot:'M88', pool:'3rd Group D/E/I/J/L'},
+  {id:'r32_15', slot:'M87', pool:'3rd Group D/E/I/J/L'},
+  {id:'r32_9',  slot:'M81', pool:'3rd Group B/E/F/I/J'},
 ];
 
 function updateR32Assignment(slotId, value) {
@@ -1658,6 +1658,7 @@ async function jsonbinGet() {
       localStorage.setItem('wc2026_bonus_results', JSON.stringify(bonusResults));
 
       renderBracketPicks();
+      renderKnockoutResultsForm(); // refresh admin R32 dropdowns with real team names
     }
 
     // Sync phase2 unlock flag so all participants see it
@@ -1954,14 +1955,14 @@ function generateMatchups(round) {
       {slot:'M78', a:'2nd Group E', b:'2nd Group I',           id:'r32_5'},  // Jun 30
       {slot:'M79', a:'1st Group A', b:'3rd Group C/E/F/H/I',  id:'r32_7'},  // Jun 30
       {slot:'M80', a:'1st Group L', b:'3rd Group E/H/I/J/K',  id:'r32_8'},  // Jul 1
-      {slot:'M81', a:'1st Group G', b:'3rd Group A/E/H/I/J',  id:'r32_9'},  // Jul 1
-      {slot:'M82', a:'1st Group D', b:'3rd Group B/E/F/I/J',  id:'r32_10'}, // Jul 1
+      {slot:'M81', a:'1st Group D', b:'3rd Group B/E/F/I/J',  id:'r32_9'},  // Jul 1
+      {slot:'M82', a:'1st Group G', b:'3rd Group A/E/H/I/J',  id:'r32_10'}, // Jul 1
       {slot:'M83', a:'2nd Group K', b:'2nd Group L',          id:'r32_11'}, // Jul 2
       {slot:'M84', a:'1st Group H', b:'2nd Group J',          id:'r32_12'}, // Jul 2
       {slot:'M85', a:'1st Group B', b:'3rd Group E/F/G/I/J',  id:'r32_13'}, // Jul 2
-      {slot:'M86', a:'2nd Group D', b:'2nd Group G',          id:'r32_14'}, // Jul 3
-      {slot:'M87', a:'1st Group J', b:'2nd Group H',          id:'r32_15'}, // Jul 3
-      {slot:'M88', a:'1st Group K', b:'3rd Group D/E/I/J/L',  id:'r32_16'}, // Jul 3
+      {slot:'M86', a:'2nd Group H', b:'1st Group J',          id:'r32_14'}, // Jul 3
+      {slot:'M87', a:'1st Group K', b:'3rd Group D/E/I/J/L',  id:'r32_15'}, // Jul 3
+      {slot:'M88', a:'2nd Group D', b:'2nd Group G',          id:'r32_16'}, // Jul 3
     ].map(m => matchupCard(m.slot,resolveTeam(m.a),resolveTeam(m.b),m.id,'R32')).join('');
   }
   if (round.id === 'r16') {
@@ -2913,9 +2914,9 @@ const R32_SLOTS = [
   {id:'r32_11', label:'R32 Match 11', a:'2nd Group K', b:'2nd Group L'},
   {id:'r32_12', label:'R32 Match 12', a:'1st Group H', b:'2nd Group J'},
   {id:'r32_13', label:'R32 Match 13', a:'1st Group B', b:'3rd Group E/F/G/I/J'},
-  {id:'r32_14', label:'R32 Match 14', a:'2nd Group D', b:'2nd Group G'},
-  {id:'r32_15', label:'R32 Match 15', a:'1st Group J', b:'2nd Group H'},
-  {id:'r32_16', label:'R32 Match 16', a:'1st Group K', b:'3rd Group D/E/I/J/L'},
+  {id:'r32_14', label:'R32 Match 14', a:'2nd Group H', b:'1st Group J'},
+  {id:'r32_15', label:'R32 Match 15', a:'1st Group K', b:'3rd Group D/E/I/J/L'},
+  {id:'r32_16', label:'R32 Match 16', a:'2nd Group D', b:'2nd Group G'},
 ];
 
 const KNOCKOUT_SLOTS = [
@@ -3032,8 +3033,9 @@ function saveGroupResults() {
   pushAdminResults();
   document.getElementById('group-results-status').textContent = '✓ Group results saved. Bracket labels updated for all users.';
   setTimeout(() => { document.getElementById('group-results-status').textContent = ''; }, 4000);
-  // Re-render bracket picks so labels update immediately
+  // Re-render bracket picks AND knockout results form so R32 dropdowns show real team names
   renderBracketPicks();
+  renderKnockoutResultsForm();
   showToast('Group results saved ✓', 'ok');
 }
 
@@ -3089,12 +3091,15 @@ function renderKnockoutResultsForm() {
             teamA = sf1Winner && sf1Teams[0] && sf1Teams[1] ? (sf1Winner === sf1Teams[0] ? sf1Teams[1] : sf1Teams[0]) : null;
             teamB = sf2Winner && sf2Teams[0] && sf2Teams[1] ? (sf2Winner === sf2Teams[0] ? sf2Teams[1] : sf2Teams[0]) : null;
           } else if (isR32) {
-            // R32: teams come from group results via resolveTeam
-            teamA = resolveTeam(slot.a) !== slot.a ? resolveTeam(slot.a) : null;
-            teamB = resolveTeam(slot.b) !== slot.b ? resolveTeam(slot.b) : null;
-            // If still unresolved show the label itself so admin knows what it is
-            if (!teamA) teamA = slot.a;
-            if (!teamB) teamB = slot.b;
+            // R32: resolve teams directly from groupResults/knockoutResults
+            // Use resolveTeam but ALWAYS fall back to label (never null) so bothKnown stays true
+            const resolvedA = groupResults[slot.a] || knockoutResults[slot.a] || null;
+            const resolvedB = groupResults[slot.b] || knockoutResults[slot.b] || null;
+            // For 3rd-place pool labels, use resolveTeam which handles pool matching
+            const isPoolA = slot.a.startsWith('3rd Group ');
+            const isPoolB = slot.b.startsWith('3rd Group ');
+            teamA = isPoolA ? (resolveTeam(slot.a) !== slot.a ? resolveTeam(slot.a) : slot.a) : (resolvedA || slot.a);
+            teamB = isPoolB ? (resolveTeam(slot.b) !== slot.b ? resolveTeam(slot.b) : slot.b) : (resolvedB || slot.b);
           } else {
             // R16 and beyond: teams come from prior knockout results
             teamA = knockoutResults[slot.a] || null;
