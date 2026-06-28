@@ -1293,8 +1293,10 @@
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <button class="btn success" onclick="unlockPhase2()">🔓 Unlock Knockout Bracket</button>
         <button class="btn secondary" onclick="lockPhase2()">🔒 Re-lock Bracket</button>
+        <button class="btn" onclick="reopenForLateEntries()" style="background:var(--indigo);color:#fff;">🔄 Re-open for Late Entries</button>
         <span id="phase2-status" style="font-size:0.78rem;color:var(--text-light);"></span>
       </div>
+      <p style="font-size:0.75rem;color:var(--text-light);margin-top:10px;">Use <strong>Re-open for Late Entries</strong> to let players who already picked re-do their knockout picks (e.g. after a bracket correction). This clears their old picks when they next open the site.</p>
     </div>
 
     <div class="divider"></div>
@@ -1401,6 +1403,20 @@ const BONUS_QUESTIONS = [
 
 // ===================== STATE =====================
 let picks             = JSON.parse(localStorage.getItem('wc2026_picks')           || '{}');
+// v2: bracket structure changed June 28 2026 — clear stale knockout picks
+(function() {
+  const BRACKET_VERSION = 'v2_2026-06-28';
+  if (localStorage.getItem('wc2026_bracket_version') !== BRACKET_VERSION) {
+    const knockoutKeys = Object.keys(picks).filter(k =>
+      k.startsWith('r32_') || k.startsWith('r16_') ||
+      k.startsWith('qf_')  || k.startsWith('sf_')  ||
+      k === '3p_1' || k === 'final_1'
+    );
+    knockoutKeys.forEach(k => delete picks[k]);
+    localStorage.setItem('wc2026_picks', JSON.stringify(picks));
+    localStorage.setItem('wc2026_bracket_version', BRACKET_VERSION);
+  }
+})();
 let bonusPicks        = JSON.parse(localStorage.getItem('wc2026_bonus')           || '{}');
 let localEntries      = JSON.parse(localStorage.getItem('wc2026_local')           || '[]');
 let participantName   = localStorage.getItem('wc2026_name') || '';
@@ -1475,6 +1491,21 @@ async function unlockPhase2() {
   const entries = remote || [];
   const ok = await jsonbinPut(entries, true);
   showToast(ok ? 'Phase 2 unlocked for all participants ✓' : 'Phase 2 unlocked locally — JSONBin sync failed', ok ? 'ok' : 'error');
+}
+
+async function reopenForLateEntries() {
+  // Bump bracket version — all clients will clear stale knockout picks on next visit
+  const newVersion = 'v_' + Date.now();
+  localStorage.setItem('wc2026_bracket_version', newVersion);
+  localStorage.setItem('wc2026_phase2_unlocked', 'true');
+  // Push to server via adminResults so all clients receive new version
+  await pushAdminResults();
+  // Also push phase2 unlock
+  const remote = await jsonbinGet();
+  await jsonbinPut(remote || [], true);
+  const el = document.getElementById('phase2-status');
+  if (el) { el.textContent = '🔄 Re-opened — players will see a fresh bracket on next visit.'; el.style.color = 'var(--green)'; }
+  showToast('Bracket re-opened for late entries ✓', 'ok');
 }
 
 async function lockPhase2() {
@@ -1657,6 +1688,21 @@ async function jsonbinGet() {
       bonusResults = ar.bonusResults ? { ...ar.bonusResults } : {};
       localStorage.setItem('wc2026_bonus_results', JSON.stringify(bonusResults));
 
+      // Sync bracket version — if admin bumped it, clear stale knockout picks for this client
+      if (ar.bracketVersion) {
+        const localVersion = localStorage.getItem('wc2026_bracket_version');
+        if (localVersion !== ar.bracketVersion) {
+          const knockoutKeys = Object.keys(picks).filter(k =>
+            k.startsWith('r32_') || k.startsWith('r16_') ||
+            k.startsWith('qf_')  || k.startsWith('sf_')  ||
+            k === '3p_1' || k === 'final_1'
+          );
+          knockoutKeys.forEach(k => delete picks[k]);
+          localStorage.setItem('wc2026_picks', JSON.stringify(picks));
+          localStorage.setItem('wc2026_bracket_version', ar.bracketVersion);
+        }
+      }
+
       renderBracketPicks();
       renderKnockoutResultsForm();
     }
@@ -1713,6 +1759,7 @@ async function pushAdminResults() {
           thirdPlaceQualifiers,
           qualifierResults,
           bonusResults,
+          bracketVersion: localStorage.getItem('wc2026_bracket_version') || 'v2_2026-06-28',
         }
       })
     });
@@ -1967,14 +2014,14 @@ function generateMatchups(round) {
   }
   if (round.id === 'r16') {
     const r16Slots = [
-      {slot:'R16-1 (M89)', a:'Winner M74', b:'Winner M77', id:'r16_1'}, // Ger/Par vs Fra/Swe
-      {slot:'R16-2 (M90)', a:'Winner M73', b:'Winner M75', id:'r16_2'}, // Can/SA  vs Ned/Mar
-      {slot:'R16-3 (M91)', a:'Winner M76', b:'Winner M78', id:'r16_3'}, // Bra/Jpn vs Nor/IvC
-      {slot:'R16-4 (M92)', a:'Winner M79', b:'Winner M80', id:'r16_4'}, // Mex/Ecu vs Eng/CGO
-      {slot:'R16-5 (M93)', a:'Winner M83', b:'Winner M84', id:'r16_5'}, // Por/Cro vs Esp/Aut
-      {slot:'R16-6 (M94)', a:'Winner M81', b:'Winner M82', id:'r16_6'}, // USA/Bos vs Bel/Sen
-      {slot:'R16-7 (M95)', a:'Winner M86', b:'Winner M88', id:'r16_7'}, // Arg/CpV vs Aus/Egy
-      {slot:'R16-8 (M96)', a:'Winner M85', b:'Winner M87', id:'r16_8'}, // Swi/Alg vs Col/Gha
+      {slot:'R16-1 (M89)', a:'Winner M74', b:'Winner M77', id:'r16_1'},
+      {slot:'R16-2 (M90)', a:'Winner M73', b:'Winner M75', id:'r16_2'},
+      {slot:'R16-3 (M91)', a:'Winner M76', b:'Winner M78', id:'r16_3'},
+      {slot:'R16-4 (M92)', a:'Winner M79', b:'Winner M80', id:'r16_4'},
+      {slot:'R16-5 (M93)', a:'Winner M83', b:'Winner M84', id:'r16_5'},
+      {slot:'R16-6 (M94)', a:'Winner M81', b:'Winner M82', id:'r16_6'},
+      {slot:'R16-7 (M95)', a:'Winner M86', b:'Winner M88', id:'r16_7'},
+      {slot:'R16-8 (M96)', a:'Winner M85', b:'Winner M87', id:'r16_8'},
     ];
     return r16Slots.map(m => {
       const teamA = knockoutResults[m.id] ? knockoutResults[m.id] :
@@ -2017,26 +2064,22 @@ function matchupCard(slot,teamA,teamB,id,badge){
 
 // Map each knockout slot to its two feeder slots
 const SLOT_FEEDERS = {
-  // R16 — correct FIFA bracket pairings
-  'r16_1': ['r32_2',  'r32_6'],   // M89: W-M74 (Ger/Par) vs W-M77 (Fra/Swe)
-  'r16_2': ['r32_1',  'r32_3'],   // M90: W-M73 (Can/SA)  vs W-M75 (Ned/Mar)
-  'r16_3': ['r32_4',  'r32_5'],   // M91: W-M76 (Bra/Jpn) vs W-M78 (Nor/IvC)
-  'r16_4': ['r32_7',  'r32_8'],   // M92: W-M79 (Mex/Ecu) vs W-M80 (Eng/CGO)
-  'r16_5': ['r32_11', 'r32_12'],  // M93: W-M83 (Por/Cro) vs W-M84 (Esp/Aut)
-  'r16_6': ['r32_9',  'r32_10'],  // M94: W-M81 (USA/Bos) vs W-M82 (Bel/Sen)
-  'r16_7': ['r32_14', 'r32_16'],  // M95: W-M86 (Arg/CpV) vs W-M88 (Aus/Egy)
-  'r16_8': ['r32_13', 'r32_15'],  // M96: W-M85 (Swi/Alg) vs W-M87 (Col/Gha)
-  // QF — correct FIFA bracket pairings
-  'qf_1':  ['r16_1',  'r16_2'],   // M97: W-M89 vs W-M90  (left top)
-  'qf_2':  ['r16_3',  'r16_4'],   // M99: W-M91 vs W-M92  (right top)
-  'qf_3':  ['r16_5',  'r16_6'],   // M98: W-M93 vs W-M94  (left bottom)
-  'qf_4':  ['r16_7',  'r16_8'],   // M100: W-M95 vs W-M96 (right bottom)
-  // SF — M101: W-M97 vs W-M99, M102: W-M98 vs W-M100
+  'r16_1': ['r32_2',  'r32_6'],   // M89: W-M74 vs W-M77
+  'r16_2': ['r32_1',  'r32_3'],   // M90: W-M73 vs W-M75
+  'r16_3': ['r32_4',  'r32_5'],   // M91: W-M76 vs W-M78
+  'r16_4': ['r32_7',  'r32_8'],   // M92: W-M79 vs W-M80
+  'r16_5': ['r32_11', 'r32_12'],  // M93: W-M83 vs W-M84
+  'r16_6': ['r32_9',  'r32_10'],  // M94: W-M81 vs W-M82
+  'r16_7': ['r32_14', 'r32_16'],  // M95: W-M86 vs W-M88
+  'r16_8': ['r32_13', 'r32_15'],  // M96: W-M85 vs W-M87
+  'qf_1':  ['r16_1',  'r16_2'],   // M97: W-M89 vs W-M90
+  'qf_2':  ['r16_3',  'r16_4'],   // M99: W-M91 vs W-M92
+  'qf_3':  ['r16_5',  'r16_6'],   // M98: W-M93 vs W-M94
+  'qf_4':  ['r16_7',  'r16_8'],   // M100: W-M95 vs W-M96
   'sf_1':  ['qf_1',   'qf_2'],
   'sf_2':  ['qf_3',   'qf_4'],
-  // 3rd place & Final
-  '3p_1':    ['sf_1', 'sf_2'],
-  'final_1': ['sf_1', 'sf_2'],
+  '3p_1':  ['sf_1',   'sf_2'],
+  'final_1':['sf_1',  'sf_2'],
 };
 
 // Get the two possible teams for a knockout slot
@@ -2919,24 +2962,20 @@ const R32_SLOTS = [
 ];
 
 const KNOCKOUT_SLOTS = [
-  // R16 — correct FIFA bracket pairings
-  {id:'r16_1',label:'R16 Match 1 (M89)', a:'r32_2',  b:'r32_6'},   // Ger/Par vs Fra/Swe
-  {id:'r16_2',label:'R16 Match 2 (M90)', a:'r32_1',  b:'r32_3'},   // Can/SA  vs Ned/Mar
-  {id:'r16_3',label:'R16 Match 3 (M91)', a:'r32_4',  b:'r32_5'},   // Bra/Jpn vs Nor/IvC
-  {id:'r16_4',label:'R16 Match 4 (M92)', a:'r32_7',  b:'r32_8'},   // Mex/Ecu vs Eng/CGO
-  {id:'r16_5',label:'R16 Match 5 (M93)', a:'r32_11', b:'r32_12'},  // Por/Cro vs Esp/Aut
-  {id:'r16_6',label:'R16 Match 6 (M94)', a:'r32_9',  b:'r32_10'},  // USA/Bos vs Bel/Sen
-  {id:'r16_7',label:'R16 Match 7 (M95)', a:'r32_14', b:'r32_16'},  // Arg/CpV vs Aus/Egy
-  {id:'r16_8',label:'R16 Match 8 (M96)', a:'r32_13', b:'r32_15'},  // Swi/Alg vs Col/Gha
-  // QF — correct FIFA bracket pairings
-  {id:'qf_1', label:'QF 1 (M97)',  a:'r16_1', b:'r16_2'},  // W-M89 vs W-M90
-  {id:'qf_2', label:'QF 2 (M99)',  a:'r16_3', b:'r16_4'},  // W-M91 vs W-M92
-  {id:'qf_3', label:'QF 3 (M98)',  a:'r16_5', b:'r16_6'},  // W-M93 vs W-M94
-  {id:'qf_4', label:'QF 4 (M100)', a:'r16_7', b:'r16_8'},  // W-M95 vs W-M96
-  // SF — M101: W-M97 vs W-M99, M102: W-M98 vs W-M100
+  {id:'r16_1',label:'R16 Match 1 (M89)', a:'r32_2',  b:'r32_6'},
+  {id:'r16_2',label:'R16 Match 2 (M90)', a:'r32_1',  b:'r32_3'},
+  {id:'r16_3',label:'R16 Match 3 (M91)', a:'r32_4',  b:'r32_5'},
+  {id:'r16_4',label:'R16 Match 4 (M92)', a:'r32_7',  b:'r32_8'},
+  {id:'r16_5',label:'R16 Match 5 (M93)', a:'r32_11', b:'r32_12'},
+  {id:'r16_6',label:'R16 Match 6 (M94)', a:'r32_9',  b:'r32_10'},
+  {id:'r16_7',label:'R16 Match 7 (M95)', a:'r32_14', b:'r32_16'},
+  {id:'r16_8',label:'R16 Match 8 (M96)', a:'r32_13', b:'r32_15'},
+  {id:'qf_1', label:'QF 1 (M97)',  a:'r16_1', b:'r16_2'},
+  {id:'qf_2', label:'QF 2 (M99)',  a:'r16_3', b:'r16_4'},
+  {id:'qf_3', label:'QF 3 (M98)',  a:'r16_5', b:'r16_6'},
+  {id:'qf_4', label:'QF 4 (M100)', a:'r16_7', b:'r16_8'},
   {id:'sf_1', label:'SF 1 (M101)', a:'qf_1', b:'qf_2'},
   {id:'sf_2', label:'SF 2 (M102)', a:'qf_3', b:'qf_4'},
-  // 3rd place & Final
   {id:'3p_1',    label:'3rd Place Match', a:'sf_1', b:'sf_2'},
   {id:'final_1', label:'Final',           a:'sf_1', b:'sf_2'},
 ];
@@ -3089,7 +3128,6 @@ function renderKnockoutResultsForm() {
             teamA = sf1Winner && sf1Teams[0] && sf1Teams[1] ? (sf1Winner === sf1Teams[0] ? sf1Teams[1] : sf1Teams[0]) : null;
             teamB = sf2Winner && sf2Teams[0] && sf2Teams[1] ? (sf2Winner === sf2Teams[0] ? sf2Teams[1] : sf2Teams[0]) : null;
           } else if (isR32) {
-            // R32: read directly from groupResults for 1st/2nd labels; resolveTeam for 3rd pools
             const isPoolA = slot.a.startsWith('3rd Group ');
             const isPoolB = slot.b.startsWith('3rd Group ');
             teamA = isPoolA ? (resolveTeam(slot.a) !== slot.a ? resolveTeam(slot.a) : slot.a)
