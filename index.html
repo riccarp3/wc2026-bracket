@@ -1967,20 +1967,20 @@ function generateMatchups(round) {
   }
   if (round.id === 'r16') {
     const r16Slots = [
-      {slot:'R16-1', a:'Winner M73', b:'Winner M74', id:'r16_1'},
-      {slot:'R16-2', a:'Winner M75', b:'Winner M76', id:'r16_2'},
-      {slot:'R16-3', a:'Winner M77', b:'Winner M78', id:'r16_3'},
-      {slot:'R16-4', a:'Winner M79', b:'Winner M80', id:'r16_4'},
-      {slot:'R16-5', a:'Winner M81', b:'Winner M82', id:'r16_5'},
-      {slot:'R16-6', a:'Winner M83', b:'Winner M84', id:'r16_6'},
-      {slot:'R16-7', a:'Winner M85', b:'Winner M86', id:'r16_7'},
-      {slot:'R16-8', a:'Winner M87', b:'Winner M88', id:'r16_8'},
+      {slot:'R16-1 (M89)', a:'Winner M74', b:'Winner M77', id:'r16_1'}, // Ger/Par vs Fra/Swe
+      {slot:'R16-2 (M90)', a:'Winner M73', b:'Winner M75', id:'r16_2'}, // Can/SA  vs Ned/Mar
+      {slot:'R16-3 (M91)', a:'Winner M76', b:'Winner M78', id:'r16_3'}, // Bra/Jpn vs Nor/IvC
+      {slot:'R16-4 (M92)', a:'Winner M79', b:'Winner M80', id:'r16_4'}, // Mex/Ecu vs Eng/CGO
+      {slot:'R16-5 (M93)', a:'Winner M83', b:'Winner M84', id:'r16_5'}, // Por/Cro vs Esp/Aut
+      {slot:'R16-6 (M94)', a:'Winner M81', b:'Winner M82', id:'r16_6'}, // USA/Bos vs Bel/Sen
+      {slot:'R16-7 (M95)', a:'Winner M86', b:'Winner M88', id:'r16_7'}, // Arg/CpV vs Aus/Egy
+      {slot:'R16-8 (M96)', a:'Winner M85', b:'Winner M87', id:'r16_8'}, // Swi/Alg vs Col/Gha
     ];
     return r16Slots.map(m => {
       const teamA = knockoutResults[m.id] ? knockoutResults[m.id] :
-                    (knockoutResults[m.a.replace('Winner ','r32_').replace('M73','r32_1').replace('M74','r32_2').replace('M75','r32_3').replace('M76','r32_4').replace('M77','r32_5').replace('M78','r32_6').replace('M79','r32_7').replace('M80','r32_8').replace('M81','r32_9').replace('M82','r32_10').replace('M83','r32_11').replace('M84','r32_12').replace('M85','r32_13').replace('M86','r32_14').replace('M87','r32_15').replace('M88','r32_16')] || m.a);
+                    (knockoutResults[m.a.replace('Winner ','r32_').replace('M73','r32_1').replace('M74','r32_2').replace('M75','r32_3').replace('M76','r32_4').replace('M77','r32_6').replace('M78','r32_5').replace('M79','r32_7').replace('M80','r32_8').replace('M81','r32_9').replace('M82','r32_10').replace('M83','r32_11').replace('M84','r32_12').replace('M85','r32_13').replace('M86','r32_14').replace('M87','r32_15').replace('M88','r32_16')] || m.a);
       const teamB = knockoutResults[m.id] ? '' :
-                    (knockoutResults[m.b.replace('Winner ','r32_').replace('M73','r32_1').replace('M74','r32_2').replace('M75','r32_3').replace('M76','r32_4').replace('M77','r32_5').replace('M78','r32_6').replace('M79','r32_7').replace('M80','r32_8').replace('M81','r32_9').replace('M82','r32_10').replace('M83','r32_11').replace('M84','r32_12').replace('M85','r32_13').replace('M86','r32_14').replace('M87','r32_15').replace('M88','r32_16')] || m.b);
+                    (knockoutResults[m.b.replace('Winner ','r32_').replace('M73','r32_1').replace('M74','r32_2').replace('M75','r32_3').replace('M76','r32_4').replace('M77','r32_6').replace('M78','r32_5').replace('M79','r32_7').replace('M80','r32_8').replace('M81','r32_9').replace('M82','r32_10').replace('M83','r32_11').replace('M84','r32_12').replace('M85','r32_13').replace('M86','r32_14').replace('M87','r32_15').replace('M88','r32_16')] || m.b);
       return pickFromTeams(m.slot, m.id, 'R16 — pick winner');
     }).join('');
   }
