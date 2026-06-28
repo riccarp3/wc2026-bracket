@@ -1418,9 +1418,9 @@ Object.assign(groupResults, qualifierResults);
 // Phase date constants — must be here so getPhase() works on first render
 // Apply saved R32 assignments into groupResults immediately
 const _r32SlotDefs = [
-  {id:'r32_2',pool:'3rd Group A/B/C/D/F'},{id:'r32_6',pool:'3rd Group C/D/F/G/H'},
-  {id:'r32_7',pool:'3rd Group C/E/F/H/I'},{id:'r32_8',pool:'3rd Group E/H/I/J/K'},
-  {id:'r32_9',pool:'3rd Group A/E/H/I/J'},{id:'r32_10',pool:'3rd Group B/E/F/I/J'},
+  {id:'r32_2',pool:'3rd Group A/B/C/D/F'},{id:'r32_7',pool:'3rd Group C/E/F/H/I'},
+  {id:'r32_6',pool:'3rd Group C/D/F/G/H'},{id:'r32_8',pool:'3rd Group E/H/I/J/K'},
+  {id:'r32_9',pool:'3rd Group A/B/E/H/I/J'},{id:'r32_10',pool:'3rd Group B/E/F/I/J'},
   {id:'r32_13',pool:'3rd Group E/F/G/I/J'},{id:'r32_16',pool:'3rd Group D/E/I/J/L'},
 ];
 _r32SlotDefs.forEach(s => { if (r32Assignments[s.id]) groupResults[s.pool] = r32Assignments[s.id]; });
@@ -1524,10 +1524,10 @@ function isPhase2UnlockedByAdmin() {
 // ===================== R32 THIRD-PLACE ASSIGNMENTS =====================
 const R32_THIRD_SLOTS = [
   {id:'r32_2',  slot:'M74', pool:'3rd Group A/B/C/D/F'},
-  {id:'r32_6',  slot:'M78', pool:'3rd Group C/D/F/G/H'},
   {id:'r32_7',  slot:'M79', pool:'3rd Group C/E/F/H/I'},
+  {id:'r32_6',  slot:'M77', pool:'3rd Group C/D/F/G/H'},
   {id:'r32_8',  slot:'M80', pool:'3rd Group E/H/I/J/K'},
-  {id:'r32_9',  slot:'M81', pool:'3rd Group A/E/H/I/J'},
+  {id:'r32_9',  slot:'M81', pool:'3rd Group A/B/E/H/I/J'},
   {id:'r32_10', slot:'M82', pool:'3rd Group B/E/F/I/J'},
   {id:'r32_13', slot:'M85', pool:'3rd Group E/F/G/I/J'},
   {id:'r32_16', slot:'M88', pool:'3rd Group D/E/I/J/L'},
@@ -1950,8 +1950,8 @@ function generateMatchups(round) {
       {slot:'M74', a:'1st Group E', b:'3rd Group A/B/C/D/F',  id:'r32_2'},  // Jun 29
       {slot:'M75', a:'1st Group F', b:'2nd Group C',          id:'r32_3'},  // Jun 29
       {slot:'M76', a:'1st Group C', b:'2nd Group F',          id:'r32_4'},  // Jun 29
-      {slot:'M77', a:'2nd Group E', b:'2nd Group I',          id:'r32_5'},  // Jun 30
-      {slot:'M78', a:'1st Group I', b:'3rd Group C/D/F/G/H',  id:'r32_6'},  // Jun 30
+      {slot:'M77', a:'1st Group I', b:'3rd Group C/D/F/G/H',  id:'r32_6'},  // Jun 30
+      {slot:'M78', a:'2nd Group E', b:'2nd Group I',           id:'r32_5'},  // Jun 30
       {slot:'M79', a:'1st Group A', b:'3rd Group C/E/F/H/I',  id:'r32_7'},  // Jun 30
       {slot:'M80', a:'1st Group L', b:'3rd Group E/H/I/J/K',  id:'r32_8'},  // Jul 1
       {slot:'M81', a:'1st Group G', b:'3rd Group A/E/H/I/J',  id:'r32_9'},  // Jul 1
