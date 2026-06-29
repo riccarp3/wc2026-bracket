@@ -1956,6 +1956,10 @@ function setGroupPick(id, value) {
   renderBracketPicks();
 }
 
+function isBracketSubmittable() {
+  return isPhase2UnlockedByAdmin();
+}
+
 function renderBracketPicks() {
   const phase = getPhase(); // always re-evaluate from localStorage
   const el = document.getElementById('bracket-picks');
@@ -2133,6 +2137,7 @@ function getTeamListForSlot(slotId) {
 }
 
 function pickFromTeams(slot,id,label){
+  const isKOLocked = !isPhase2UnlockedByAdmin();
   const picked = picks[id];
   const teamList = getTeamListForSlot(id);
   const isTwoTeam = teamList.length === 2;
@@ -2153,13 +2158,13 @@ function pickFromTeams(slot,id,label){
         </div>
         <div class="matchup-teams">
           <div class="pick-option ${picked===teamA?'selected':''}" onclick="setPick('${id}','${teamA}',this)"
-            style="${aWon?'border-color:rgb(16,140,80);background:rgba(16,140,80,0.07);':''}">
+            style="${aWon?'border-color:rgb(16,140,80);background:rgba(16,140,80,0.07);':''}${isKOLocked?' opacity:0.7;cursor:not-allowed;':''}">
             <div class="pick-radio"></div>
             <span class="pick-team-name">${flagA}${teamA}</span>
             ${aWon?'<span style="margin-left:auto;font-size:0.65rem;font-weight:700;color:rgb(16,140,80);">✓ WON</span>':''}
           </div>
           <div class="pick-option ${picked===teamB?'selected':''}" onclick="setPick('${id}','${teamB}',this)"
-            style="${bWon?'border-color:rgb(16,140,80);background:rgba(16,140,80,0.07);':''}">
+            style="${bWon?'border-color:rgb(16,140,80);background:rgba(16,140,80,0.07);':''}${isKOLocked?' opacity:0.7;cursor:not-allowed;':''}">
             <div class="pick-radio"></div>
             <span class="pick-team-name">${flagB}${teamB}</span>
             ${bWon?'<span style="margin-left:auto;font-size:0.65rem;font-weight:700;color:rgb(16,140,80);">✓ WON</span>':''}
@@ -2173,7 +2178,7 @@ function pickFromTeams(slot,id,label){
       <div class="matchup-header"><span>${slot}</span><span class="tag" style="font-size:0.52rem;border-radius:6px;padding:3px 8px;display:inline-flex;align-items:center;justify-content:center;">${label}</span></div>
       <div class="matchup-teams">
         <div class="select-label">Select Winner</div>
-        <select onchange="setPick('${id}',this.value,null)">
+        <select onchange="setPick('${id}',this.value,null)" ${isKOLocked?'disabled':''}>
           <option value="">— Pick a team —</option>
           ${teamList.map(t=>`<option value="${t}" ${picked===t?'selected':''}>${FLAGS[t]||''} ${t}</option>`).join('')}
         </select>
@@ -2182,6 +2187,10 @@ function pickFromTeams(slot,id,label){
 }
 
 function setPick(id,value,el){
+  // Block changes if bracket is locked (phase2 not unlocked by admin)
+  const isKnockoutPick = id.startsWith('r32') || id.startsWith('r16') ||
+    id.startsWith('qf') || id.startsWith('sf') || id==='3p_1' || id==='final_1';
+  if (isKnockoutPick && !isPhase2UnlockedByAdmin()) return;
   picks[id]=value;
   localStorage.setItem('wc2026_picks',JSON.stringify(picks));
   if(el){
@@ -2347,6 +2356,13 @@ async function submitBracket(phaseArg){
   if (!isP2 && isGroupPicksLocked()) {
     showToast('Group stage picks are locked — tournament has started.', 'error');
     if (statusEl) statusEl.textContent = '🔒 Group picks locked as of June 11, 2026.';
+    return;
+  }
+
+  // Lock check for phase 2
+  if (isP2 && !isPhase2UnlockedByAdmin()) {
+    showToast('Knockout bracket is locked — picks cannot be changed.', 'error');
+    if (statusEl) statusEl.textContent = '🔒 Knockout picks are locked.';
     return;
   }
 
