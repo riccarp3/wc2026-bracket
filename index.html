@@ -1402,10 +1402,10 @@ const BONUS_QUESTIONS = [
 
 // ===================== STATE =====================
 let picks             = JSON.parse(localStorage.getItem('wc2026_picks')           || '{}');
-// Clear stale knockout picks if bracket version has changed
-(function() {
-  const BRACKET_VERSION = 'v2_2026-06-28';
-  if (localStorage.getItem('wc2026_bracket_version') !== BRACKET_VERSION) {
+// Clear stale knockout picks if bracket version has changed — deferred so adminUnlocked is set
+window._deferredBracketVersionCheck = function() {
+  const BRACKET_VERSION = 'v2_2026-06-29';
+  if (!adminUnlocked && localStorage.getItem('wc2026_bracket_version') !== BRACKET_VERSION) {
     const knockoutKeys = Object.keys(picks).filter(k =>
       k.startsWith('r32_') || k.startsWith('r16_') ||
       k.startsWith('qf_')  || k.startsWith('sf_')  ||
@@ -1415,7 +1415,7 @@ let picks             = JSON.parse(localStorage.getItem('wc2026_picks')         
     localStorage.setItem('wc2026_picks', JSON.stringify(picks));
     localStorage.setItem('wc2026_bracket_version', BRACKET_VERSION);
   }
-})();
+};
 let bonusPicks        = JSON.parse(localStorage.getItem('wc2026_bonus')           || '{}');
 let localEntries      = JSON.parse(localStorage.getItem('wc2026_local')           || '[]');
 let participantName   = localStorage.getItem('wc2026_name') || '';
@@ -3319,6 +3319,8 @@ async function recalculateScores() {
 // ===================== HOOK INTO INIT =====================
 // Extend the existing DOMContentLoaded to also render results forms
 document.addEventListener('DOMContentLoaded', () => {
+  // Run bracket version check now that adminUnlocked state is established
+  if (window._deferredBracketVersionCheck) window._deferredBracketVersionCheck();
   // Data already loaded in STATE block — just render the admin forms
   renderQualifierGrid();
   renderGroupResultsForm();
