@@ -1402,20 +1402,7 @@ const BONUS_QUESTIONS = [
 
 // ===================== STATE =====================
 let picks             = JSON.parse(localStorage.getItem('wc2026_picks')           || '{}');
-// Clear stale knockout picks if bracket version has changed — deferred so adminUnlocked is set
-window._deferredBracketVersionCheck = function() {
-  const BRACKET_VERSION = 'v2_2026-06-29';
-  if (!adminUnlocked && localStorage.getItem('wc2026_bracket_version') !== BRACKET_VERSION) {
-    const knockoutKeys = Object.keys(picks).filter(k =>
-      k.startsWith('r32_') || k.startsWith('r16_') ||
-      k.startsWith('qf_')  || k.startsWith('sf_')  ||
-      k === '3p_1' || k === 'final_1'
-    );
-    knockoutKeys.forEach(k => delete picks[k]);
-    localStorage.setItem('wc2026_picks', JSON.stringify(picks));
-    localStorage.setItem('wc2026_bracket_version', BRACKET_VERSION);
-  }
-};
+// Bracket version check removed — bracket structure finalized 2026-06-29
 let bonusPicks        = JSON.parse(localStorage.getItem('wc2026_bonus')           || '{}');
 let localEntries      = JSON.parse(localStorage.getItem('wc2026_local')           || '[]');
 let participantName   = localStorage.getItem('wc2026_name') || '';
@@ -1485,11 +1472,11 @@ async function unlockPhase2() {
   renderBracketPicks();
   updatePhaseUI();
   renderBonusQuestions();
-  // Push unlock flag to JSONBin so all participants see it
+  // Push unlock via both channels
+  await pushAdminResults();
   const remote = await jsonbinGet();
-  const entries = remote || [];
-  const ok = await jsonbinPut(entries, true);
-  showToast(ok ? 'Phase 2 unlocked for all participants ✓' : 'Phase 2 unlocked locally — JSONBin sync failed', ok ? 'ok' : 'error');
+  const ok = await jsonbinPut(remote || [], true);
+  showToast(ok ? 'Phase 2 unlocked for all participants ✓' : 'Phase 2 unlocked locally — sync failed', ok ? 'ok' : 'error');
 }
 
 async function reopenForLateEntries() {
@@ -1511,11 +1498,11 @@ async function lockPhase2() {
   updatePhaseUI();
   renderBracketPicks();
   renderBonusQuestions();
-  // Push lock flag to JSONBin
+  // Push lock via both channels to ensure all participants receive it
+  await pushAdminResults();
   const remote = await jsonbinGet();
-  const entries = remote || [];
-  const ok = await jsonbinPut(entries, false);
-  showToast(ok ? 'Knockout bracket re-locked for all participants.' : 'Re-locked locally — JSONBin sync failed', ok ? 'ok' : 'error');
+  const ok = await jsonbinPut(remote || [], false);
+  showToast(ok ? 'Knockout bracket re-locked for all participants.' : 'Re-locked locally — sync failed', ok ? 'ok' : 'error');
 }
 
 function adminLogin(btn) {
@@ -1683,21 +1670,6 @@ async function jsonbinGet() {
 
       bonusResults = ar.bonusResults ? { ...ar.bonusResults } : {};
       localStorage.setItem('wc2026_bonus_results', JSON.stringify(bonusResults));
-
-      // If admin bumped bracketVersion, clear stale knockout picks for this client
-      if (ar.bracketVersion) {
-        const localVer = localStorage.getItem('wc2026_bracket_version');
-        if (localVer !== ar.bracketVersion) {
-          const knockoutKeys = Object.keys(picks).filter(k =>
-            k.startsWith('r32_') || k.startsWith('r16_') ||
-            k.startsWith('qf_')  || k.startsWith('sf_')  ||
-            k === '3p_1' || k === 'final_1'
-          );
-          knockoutKeys.forEach(k => delete picks[k]);
-          localStorage.setItem('wc2026_picks', JSON.stringify(picks));
-          localStorage.setItem('wc2026_bracket_version', ar.bracketVersion);
-        }
-      }
 
       renderBracketPicks();
       renderKnockoutResultsForm();
@@ -3319,8 +3291,6 @@ async function recalculateScores() {
 // ===================== HOOK INTO INIT =====================
 // Extend the existing DOMContentLoaded to also render results forms
 document.addEventListener('DOMContentLoaded', () => {
-  // Run bracket version check now that adminUnlocked state is established
-  if (window._deferredBracketVersionCheck) window._deferredBracketVersionCheck();
   // Data already loaded in STATE block — just render the admin forms
   renderQualifierGrid();
   renderGroupResultsForm();
