@@ -2160,8 +2160,13 @@ function getPossibleTeams(slotId, picksSource) {
 // - If both feeders are known: show just those 2 teams
 // - If one is known: show that 1 + all remaining qualified
 // - If neither known: show all qualified 32
+// "What-if mode" lets a participant whose pick was busted by a real result keep
+// filling out their bracket as if their original pick had won, purely for their own
+// My Picks always reflects what the participant actually selected, based on their own
+// chain of picks — never silently overridden by real-world results. Real results only
+// matter for scoring (scoreOneBracket), which is a separate code path.
 function getTeamListForSlot(slotId) {
-  const possible = getPossibleTeams(slotId);
+  const possible = getHypotheticalOptions(slotId);
   if (!possible) return getQualified32();
 
   const known = possible.filter(t => t !== null);
