@@ -2592,6 +2592,52 @@ function renderLeaderboardRows(entries){
   window._lbEntriesCache = entries;
 }
 
+// Clear every currently-stale/invalid pick for one participant in a single pass —
+// useful after fixing an early-round pick so all downstream contamination is wiped at once
+// without the admin manually clicking "fix" on each affected slot.
+async function clearAllStaleForParticipant(name) {
+  if (!adminUnlocked) return;
+  const entries = window._lbEntriesCache || [];
+  const idx = entries.findIndex(x => (x.ParticipantName || x.name) === name);
+  if (idx === -1) { showToast('Could not find entry for ' + name, 'error'); return; }
+  const e = entries[idx];
+  let bp = {};
+  try { bp = typeof e.BracketPicks === 'string' ? JSON.parse(e.BracketPicks) : (e.BracketPicks || {}); } catch(err) {}
+
+  // First check if there's anything to fix at all (without prompting yet)
+  const preview = cascadeInvalidateDownstream({ ...bp });
+  if (preview.length === 0) {
+    showToast('No stale picks found for ' + name + ' — nothing to fix.', 'ok');
+    return;
+  }
+
+  if (!confirm('Fix ' + preview.length + ' stale pick(s) for ' + name + '?\n\n' + preview.map(getPickSlotLabel).join('\n') + '\n\nYou\'ll be prompted for a replacement value for each one (or leave blank to clear).')) return;
+
+  const fixed = await promptCascadeFixes(bp);
+
+  entries[idx] = { ...e, BracketPicks: JSON.stringify(bp) };
+  window._lbEntriesCache = entries;
+
+  try {
+    const res = await fetch(LEADERBOARD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries, phase2Unlocked: isPhase2UnlockedByAdmin() })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    showToast('Updated ' + fixed.length + ' pick(s) for ' + name + ' ✓', 'ok');
+    if (window._auditModalOpen) {
+      await auditAllPicks();
+    } else {
+      showFullPicks(name);
+    }
+    loadLeaderboard();
+  } catch(err) {
+    console.error('clearAllStaleForParticipant error:', err);
+    showToast('Failed to save — try again.', 'error');
+  }
+}
+
 async function auditAllPicks() {
   if (!adminUnlocked) return;
   window._auditModalOpen = true;
@@ -2638,18 +2684,31 @@ async function auditAllPicks() {
   const staleCount = problems.filter(p => p.type === 'stale').length;
   const missingCount = problems.filter(p => p.type === 'missing').length;
 
+  // Group by participant so we can offer a one-click "clear all stale for this person" action
+  const byName = {};
+  problems.forEach(p => { (byName[p.name] = byName[p.name] || []).push(p); });
+
   const rows = problems.length === 0
     ? '<div style="padding:20px;text-align:center;color:#108c50;font-weight:600;">✓ No stale or missing picks found across ' + entries.length + ' submissions.</div>'
-    : problems.map(p => {
-        const badge = p.type === 'stale'
-          ? '<span style="font-size:0.68rem;background:#fde6c8;color:#a35a00;padding:1px 6px;border-radius:8px;">⚠ stale</span>'
-          : '<span style="font-size:0.68rem;background:#fde0e0;color:#c00;padding:1px 6px;border-radius:8px;">missing</span>';
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #eee;font-size:0.8rem;">'
-          + '<span><strong>' + p.name + '</strong> <span style="color:#999;">— ' + getPickSlotLabel(p.slotId) + '</span></span>'
-          + '<span style="display:flex;align-items:center;gap:6px;">'
-          + '<span style="font-weight:600;">' + p.value + '</span>' + badge
-          + '<button onclick="editStalePick(\'' + p.name.replace(/'/g,"\\'") + '\',\'' + p.slotId + '\')" style="font-size:0.68rem;border:1px solid #ccc;background:#fff;border-radius:4px;padding:1px 6px;cursor:pointer;">✏️ fix</button>'
-          + '</span></div>';
+    : Object.keys(byName).map(name => {
+        const personProblems = byName[name];
+        const staleForPerson = personProblems.filter(p => p.type === 'stale').length;
+        const header = '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 4px;margin-top:10px;border-top:2px solid #f0f0f0;">'
+          + '<strong style="font-size:0.85rem;">' + name + '</strong>'
+          + (staleForPerson > 0 ? '<button onclick="clearAllStaleForParticipant(\'' + name.replace(/'/g,"\\'") + '\')" style="font-size:0.68rem;border:1px solid #c70;color:#a35a00;background:#fff8ee;border-radius:4px;padding:2px 8px;cursor:pointer;">🧹 Clear all ' + staleForPerson + ' stale</button>' : '')
+          + '</div>';
+        const personRows = personProblems.map(p => {
+          const badge = p.type === 'stale'
+            ? '<span style="font-size:0.68rem;background:#fde6c8;color:#a35a00;padding:1px 6px;border-radius:8px;">⚠ stale</span>'
+            : '<span style="font-size:0.68rem;background:#fde0e0;color:#c00;padding:1px 6px;border-radius:8px;">missing</span>';
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:0.78rem;">'
+            + '<span style="color:#999;">' + getPickSlotLabel(p.slotId) + '</span>'
+            + '<span style="display:flex;align-items:center;gap:6px;">'
+            + '<span style="font-weight:600;">' + p.value + '</span>' + badge
+            + '<button onclick="editStalePick(\'' + name.replace(/'/g,"\\'") + '\',\'' + p.slotId + '\')" style="font-size:0.68rem;border:1px solid #ccc;background:#fff;border-radius:4px;padding:1px 6px;cursor:pointer;">✏️ fix</button>'
+            + '</span></div>';
+        }).join('');
+        return header + personRows;
       }).join('');
 
   overlay.innerHTML = '<div style="background:#fff;border-radius:10px;max-width:600px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">'
@@ -2674,7 +2733,6 @@ async function editStalePick(name, slotId) {
   try { bp = typeof e.BracketPicks === 'string' ? JSON.parse(e.BracketPicks) : (e.BracketPicks || {}); } catch(err) {}
 
   const validOpts = validOptionsFor(slotId, bp);
-
   const promptMsg = getPickSlotLabel(slotId) + (validOpts && validOpts.length ? '\nValid options: ' + validOpts.join(' or ') : '') + '\n\nEnter corrected pick (or leave blank to clear):';
   const newVal = prompt(promptMsg, bp[slotId] || '');
   if (newVal === null) return; // cancelled
@@ -2684,6 +2742,11 @@ async function editStalePick(name, slotId) {
   } else {
     bp[slotId] = newVal.trim();
   }
+
+  // Cascade: walk downstream slots in bracket order. Any slot that's no longer valid
+  // gets prompted for a replacement immediately (admin sets the value — participant
+  // doesn't need to re-enter anything, even while the bracket is locked).
+  const fixedSlots = await promptCascadeFixes(bp);
 
   entries[idx] = { ...e, BracketPicks: JSON.stringify(bp) };
   window._lbEntriesCache = entries;
@@ -2695,7 +2758,10 @@ async function editStalePick(name, slotId) {
       body: JSON.stringify({ entries, phase2Unlocked: isPhase2UnlockedByAdmin() })
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    showToast('Pick updated for ' + name + ' ✓', 'ok');
+    const cascadeMsg = fixedSlots.length
+      ? ' — also updated ' + fixedSlots.length + ' downstream pick' + (fixedSlots.length>1?'s':'') + ': ' + fixedSlots.map(getPickSlotLabel).join(', ')
+      : '';
+    showToast('Pick updated for ' + name + ' ✓' + cascadeMsg, 'ok');
     // Refresh whichever view triggered this edit
     if (window._auditModalOpen) {
       await auditAllPicks();
@@ -2720,6 +2786,64 @@ function getPickSlotLabel(id) {
   const ko = KNOCKOUT_SLOTS.find(s => s.id === id);
   if (ko) return ko.label || id;
   return id;
+}
+
+// Given a participant's full picks object, walk every downstream knockout slot in bracket order
+// and clear any pick that is no longer a valid option given its (possibly just-corrected) feeders.
+// Returns the list of slot ids that were cleared, for reporting back to the admin.
+function cascadeInvalidateDownstream(bp) {
+  const cleared = [];
+  // Only knockout rounds participate in the dependency chain (R32 has no feeders)
+  const downstreamOrder = ['r16_1','r16_2','r16_3','r16_4','r16_5','r16_6','r16_7','r16_8',
+    'qf_1','qf_2','qf_3','qf_4','sf_1','sf_2','3p_1','final_1'];
+  downstreamOrder.forEach(id => {
+    const v = bp[id];
+    if (!v) return; // nothing to invalidate
+    const validOpts = validOptionsFor(id, bp);
+    if (validOpts && validOpts.length === 2 && !validOpts.includes(v)) {
+      delete bp[id];
+      cleared.push(id);
+    }
+  });
+  return cleared;
+}
+
+// Walk downstream slots in bracket order; for any slot that's no longer valid given
+// upstream corrections, prompt the admin immediately for a replacement value (or to clear it).
+// This sets real values instead of leaving gaps the participant would otherwise have to fill in —
+// essential while the bracket is locked and players can't edit their own picks.
+async function promptCascadeFixes(bp) {
+  const fixed = [];
+  const downstreamOrder = ['r16_1','r16_2','r16_3','r16_4','r16_5','r16_6','r16_7','r16_8',
+    'qf_1','qf_2','qf_3','qf_4','sf_1','sf_2','3p_1','final_1'];
+  let changedSomething = true;
+  // Loop until a full pass makes no further changes, since fixing one slot can
+  // invalidate the next one downstream.
+  while (changedSomething) {
+    changedSomething = false;
+    for (const id of downstreamOrder) {
+      const v = bp[id];
+      if (!v) continue; // nothing to check
+      const validOpts = validOptionsFor(id, bp);
+      if (validOpts && validOpts.length === 2 && !validOpts.includes(v)) {
+        const msg = getPickSlotLabel(id) + ' is now invalid (was "' + v + '").\n'
+          + 'Valid options: ' + validOpts.join(' or ') + '\n\n'
+          + 'Enter the corrected pick (or leave blank to clear and let them re-pick later):';
+        const newVal = prompt(msg, '');
+        if (newVal === null) {
+          // Admin cancelled — clear it rather than leave an invalid value in place
+          delete bp[id];
+        } else if (newVal.trim() === '') {
+          delete bp[id];
+        } else {
+          bp[id] = newVal.trim();
+        }
+        fixed.push(id);
+        changedSomething = true;
+      }
+    }
+  }
+  return fixed;
 }
 
 // Determine the valid options for a given slot so admin tooling can spot AND fix stale/mismatched picks.
