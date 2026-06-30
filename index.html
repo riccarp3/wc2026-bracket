@@ -1129,6 +1129,7 @@
       <h3>Submit Knockout Bracket</h3>
       <p>Group stage picks are locked. Pick your knockout round winners and submit your full bracket.</p>
       <button class="submit-btn" id="submit-btn-p2" onclick="submitBracket('p2')">SUBMIT KNOCKOUT PICKS 🏆</button>
+      <button class="btn secondary" onclick="restoreMyPicks()" style="margin-top:8px;">🔄 Restore My Last Submitted Picks</button>
       <div id="submit-status-p2" style="font-size:0.78rem;color:var(--text-light);min-height:20px;"></div>
     </div>
 
@@ -2317,6 +2318,39 @@ async function testConnection(){
 }
 
 // ===================== SUBMIT BRACKET =====================
+async function restoreMyPicks() {
+  const name = (document.getElementById('participant-name')?.value.trim() || participantName || '').trim();
+  if (!name) { showToast('Enter your name first so we can find your submission.', 'error'); return; }
+  showToast('Looking up your last submission…', 'ok');
+  try {
+    const res = await fetch(LEADERBOARD_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const entries = data.entries || [];
+    const mine = entries.find(e => (e.ParticipantName || e.name || '').trim().toLowerCase() === name.toLowerCase());
+    if (!mine) { showToast('No submitted entry found for "' + name + '" — check spelling matches exactly.', 'error'); return; }
+    let bp = {};
+    try { bp = typeof mine.BracketPicks === 'string' ? JSON.parse(mine.BracketPicks) : (mine.BracketPicks || {}); } catch(err) {}
+    if (!bp || Object.keys(bp).length === 0) { showToast('Your submission has no saved picks to restore.', 'error'); return; }
+    picks = { ...picks, ...bp };
+    localStorage.setItem('wc2026_picks', JSON.stringify(picks));
+    let bonusBp = {};
+    try { bonusBp = typeof mine.BonusPicks === 'string' ? JSON.parse(mine.BonusPicks) : (mine.BonusPicks || {}); } catch(err) {}
+    if (bonusBp && Object.keys(bonusBp).length) {
+      bonusPicks = { ...bonusPicks, ...bonusBp };
+      localStorage.setItem('wc2026_bonus', JSON.stringify(bonusPicks));
+    }
+    renderBracketPicks();
+    renderBonusQuestions();
+    updateProgress();
+    const submittedAt = mine.SubmittedAt || mine.submittedAt || '';
+    showToast('Picks restored from your ' + (submittedAt ? new Date(submittedAt).toLocaleString() : 'last') + ' submission ✓', 'ok');
+  } catch(err) {
+    console.error('restoreMyPicks error:', err);
+    showToast('Could not reach the leaderboard — try again in a moment.', 'error');
+  }
+}
+
 async function submitBracket(phaseArg){
   const isP2 = phaseArg === 'p2';
   const btnId = isP2 ? 'submit-btn-p2' : 'submit-btn-p1';
