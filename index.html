@@ -2585,12 +2585,34 @@ function showFullPicks(name) {
   const labelMap = {};
   R32_SLOTS.forEach(s => labelMap[s.id] = s.label || s.id);
   KNOCKOUT_SLOTS.forEach(s => labelMap[s.id] = s.label || s.id);
-  let lines = order.map(id => {
+  const rows = order.map(id => {
     const v = bp[id] || '(not picked)';
-    return (labelMap[id] || id) + ':  ' + v;
-  }).join('\n');
+    const missing = !bp[id];
+    return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:0.82rem;">'
+      + '<span style="color:#777;">' + (labelMap[id] || id) + '</span>'
+      + '<span style="font-weight:600;' + (missing ? 'color:#c00;' : '') + '">' + v + '</span>'
+      + '</div>';
+  }).join('');
   const submittedAt = e.SubmittedAt || e.submittedAt || e.Timestamp || 'unknown';
-  alert('Full knockout picks for ' + name + '\nSubmitted: ' + submittedAt + '\n\n' + lines);
+  const submittedStr = submittedAt !== 'unknown' ? new Date(submittedAt).toLocaleString() : 'unknown';
+
+  let overlay = document.getElementById('full-picks-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'full-picks-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.onclick = function(ev) { if (ev.target === overlay) overlay.style.display = 'none'; };
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = '<div style="background:#fff;border-radius:10px;max-width:480px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">'
+    + '<div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">'
+    + '<div><div style="font-weight:700;font-size:1rem;">' + name + '</div>'
+    + '<div style="font-size:0.72rem;color:#777;">Submitted: ' + submittedStr + '</div></div>'
+    + '<button onclick="document.getElementById(\'full-picks-overlay\').style.display=\'none\'" style="border:none;background:none;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>'
+    + '</div>'
+    + '<div style="padding:12px 20px;overflow-y:auto;flex:1;">' + rows + '</div>'
+    + '</div>';
+  overlay.style.display = 'flex';
 }
 
 // ===================== SAVE NAME =====================
