@@ -2604,16 +2604,39 @@ async function clearAllStaleForParticipant(name) {
   let bp = {};
   try { bp = typeof e.BracketPicks === 'string' ? JSON.parse(e.BracketPicks) : (e.BracketPicks || {}); } catch(err) {}
 
-  // First check if there's anything to fix at all (without prompting yet)
-  const preview = cascadeInvalidateDownstream({ ...bp });
-  if (preview.length === 0) {
+  // Find every currently-stale slot across the WHOLE bracket (R32 included), not just downstream cascades
+  const staleNow = PICK_SLOT_ORDER.filter(id => {
+    const v = bp[id];
+    if (!v) return false;
+    const validOpts = validOptionsFor(id, bp);
+    return validOpts && validOpts.length === 2 && !validOpts.includes(v);
+  });
+
+  if (staleNow.length === 0) {
     showToast('No stale picks found for ' + name + ' — nothing to fix.', 'ok');
     return;
   }
 
-  if (!confirm('Fix ' + preview.length + ' stale pick(s) for ' + name + '?\n\n' + preview.map(getPickSlotLabel).join('\n') + '\n\nYou\'ll be prompted for a replacement value for each one (or leave blank to clear).')) return;
+  if (!confirm('Fix ' + staleNow.length + ' stale pick(s) for ' + name + '?\n\n' + staleNow.map(getPickSlotLabel).join('\n') + '\n\nYou\'ll be prompted for a replacement value for each one (or leave blank to clear).')) return;
 
-  const fixed = await promptCascadeFixes(bp);
+  // Prompt for each currently-stale slot directly (covers R32), then cascade-fix any
+  // downstream knockout slots that become invalid as a result.
+  const fixedDirect = [];
+  for (const id of staleNow) {
+    const validOpts = validOptionsFor(id, bp);
+    const msg = getPickSlotLabel(id) + ' is stale (was "' + bp[id] + '").\n'
+      + (validOpts && validOpts.length ? 'Valid options: ' + validOpts.join(' or ') + '\n\n' : '\n')
+      + 'Enter the corrected pick (or leave blank to clear):';
+    const newVal = prompt(msg, '');
+    if (newVal === null || newVal.trim() === '') {
+      delete bp[id];
+    } else {
+      bp[id] = newVal.trim();
+    }
+    fixedDirect.push(id);
+  }
+  const fixedCascade = await promptCascadeFixes(bp);
+  const fixed = fixedDirect.concat(fixedCascade);
 
   entries[idx] = { ...e, BracketPicks: JSON.stringify(bp) };
   window._lbEntriesCache = entries;
@@ -2870,11 +2893,13 @@ function showFullPicks(name) {
   if (!e) { alert('No entry found for ' + name); return; }
   let bp = {};
   try { bp = typeof e.BracketPicks === 'string' ? JSON.parse(e.BracketPicks) : (e.BracketPicks || {}); } catch(err) {}
+  let staleCountForPerson = 0;
   const rows = PICK_SLOT_ORDER.map(id => {
     const v = bp[id] || '';
     const missing = !v;
     const validOpts = validOptionsFor(id, bp);
     const isStale = !missing && validOpts && validOpts.length === 2 && !validOpts.includes(v);
+    if (isStale) staleCountForPerson++;
     const display = missing ? '(not picked)' : v;
     const rowColor = missing ? '#c00' : (isStale ? '#c70' : 'inherit');
     const flag = isStale ? ' <span style="font-size:0.68rem;background:#fde6c8;color:#a35a00;padding:1px 6px;border-radius:8px;">⚠ stale</span>' : '';
@@ -2886,6 +2911,9 @@ function showFullPicks(name) {
   }).join('');
   const submittedAt = e.SubmittedAt || e.submittedAt || e.Timestamp || 'unknown';
   const submittedStr = submittedAt !== 'unknown' ? new Date(submittedAt).toLocaleString() : 'unknown';
+  const clearAllBtn = staleCountForPerson > 0
+    ? '<button onclick="clearAllStaleForParticipant(\'' + name.replace(/'/g,"\\'") + '\')" style="font-size:0.7rem;border:1px solid #c70;color:#a35a00;background:#fff8ee;border-radius:4px;padding:3px 10px;cursor:pointer;white-space:nowrap;">🧹 Clear all ' + staleCountForPerson + ' stale</button>'
+    : '';
 
   let overlay = document.getElementById('full-picks-overlay');
   if (!overlay) {
@@ -2896,11 +2924,12 @@ function showFullPicks(name) {
     document.body.appendChild(overlay);
   }
   overlay.innerHTML = '<div style="background:#fff;border-radius:10px;max-width:480px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">'
-    + '<div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">'
+    + '<div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;gap:10px;">'
     + '<div><div style="font-weight:700;font-size:1rem;">' + name + '</div>'
     + '<div style="font-size:0.72rem;color:#777;">Submitted: ' + submittedStr + '</div></div>'
+    + '<div style="display:flex;align-items:center;gap:8px;">' + clearAllBtn
     + '<button onclick="document.getElementById(\'full-picks-overlay\').style.display=\'none\'" style="border:none;background:none;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>'
-    + '</div>'
+    + '</div></div>'
     + '<div style="padding:12px 20px;overflow-y:auto;flex:1;">' + rows + '</div>'
     + '</div>';
   overlay.style.display = 'flex';
