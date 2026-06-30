@@ -1112,6 +1112,11 @@
 
     <div id="bracket-picks"></div>
 
+    <div style="text-align:center;margin:10px 0;">
+      <button class="btn secondary" onclick="restoreMyPicks()">🔄 Restore My Last Submitted Picks</button>
+      <p style="font-size:0.72rem;color:var(--text-light);margin-top:4px;">If your picks ever look blank or wrong, click this to pull back your most recent successful submission — works even while the bracket is locked.</p>
+    </div>
+
     <div class="bracket-section">
       <div class="section-title">🎯 Bonus Challenges</div>
       <p style="font-size:0.8rem;color:var(--text-light);margin-bottom:16px;">Tiebreakers and fun wrinkles. Lock these in before tournament kickoff (June 11, 3:00 PM ET).</p>
@@ -1129,7 +1134,6 @@
       <h3>Submit Knockout Bracket</h3>
       <p>Group stage picks are locked. Pick your knockout round winners and submit your full bracket.</p>
       <button class="submit-btn" id="submit-btn-p2" onclick="submitBracket('p2')">SUBMIT KNOCKOUT PICKS 🏆</button>
-      <button class="btn secondary" onclick="restoreMyPicks()" style="margin-top:8px;">🔄 Restore My Last Submitted Picks</button>
       <div id="submit-status-p2" style="font-size:0.78rem;color:var(--text-light);min-height:20px;"></div>
     </div>
 
