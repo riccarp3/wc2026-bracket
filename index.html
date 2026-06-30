@@ -2522,14 +2522,37 @@ function renderLeaderboardRows(entries){
            + '</div>';
     }).join('');
 
-    return '<div class="lb-row">'
+    return '<div class="lb-row" onclick="' + (adminUnlocked ? `showFullPicks('${name.replace(/'/g,"\\'")}')` : '') + '" style="' + (adminUnlocked ? 'cursor:pointer;' : '') + '">'
       + '<div class="lb-rank ' + rankClass + '">' + (i+1) + '</div>'
-      + '<div><div class="lb-name">' + name + '</div></div>'
+      + '<div><div class="lb-name">' + name + (adminUnlocked ? ' <span style="font-size:0.65rem;color:var(--indigo);">🔍 view picks</span>' : '') + '</div></div>'
       + '<div style="text-align:center;font-size:0.82rem;font-weight:600;">' + champ + '</div>'
       + '<div class="lb-score" style="text-align:center;">' + pts + '</div>'
       + bonusCols
       + '</div>';
   }).join('');
+  // Stash entries for showFullPicks lookups
+  window._lbEntriesCache = entries;
+}
+
+function showFullPicks(name) {
+  if (!adminUnlocked) return;
+  const entries = window._lbEntriesCache || [];
+  const e = entries.find(x => (x.ParticipantName || x.name) === name);
+  if (!e) { alert('No entry found for ' + name); return; }
+  let bp = {};
+  try { bp = typeof e.BracketPicks === 'string' ? JSON.parse(e.BracketPicks) : (e.BracketPicks || {}); } catch(err) {}
+  const order = ['r32_1','r32_2','r32_3','r32_4','r32_5','r32_6','r32_7','r32_8','r32_9','r32_10','r32_11','r32_12','r32_13','r32_14','r32_15','r32_16',
+    'r16_1','r16_2','r16_3','r16_4','r16_5','r16_6','r16_7','r16_8',
+    'qf_1','qf_2','qf_3','qf_4','sf_1','sf_2','3p_1','final_1'];
+  const labelMap = {};
+  R32_SLOTS.forEach(s => labelMap[s.id] = s.label || s.id);
+  KNOCKOUT_SLOTS.forEach(s => labelMap[s.id] = s.label || s.id);
+  let lines = order.map(id => {
+    const v = bp[id] || '(not picked)';
+    return (labelMap[id] || id) + ':  ' + v;
+  }).join('\n');
+  const submittedAt = e.SubmittedAt || e.submittedAt || e.Timestamp || 'unknown';
+  alert('Full knockout picks for ' + name + '\nSubmitted: ' + submittedAt + '\n\n' + lines);
 }
 
 // ===================== SAVE NAME =====================
