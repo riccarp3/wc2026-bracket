@@ -2069,7 +2069,8 @@ const SLOT_FEEDERS = {
 
 // Get the two possible teams for a knockout slot
 // Returns array of team names (resolved if known, otherwise null)
-function getPossibleTeams(slotId) {
+function getPossibleTeams(slotId, picksSource) {
+  const src = picksSource || picks; // default to global picks for normal participant-facing use
   const feeders = SLOT_FEEDERS[slotId];
   if (!feeders) return null;
 
@@ -2081,11 +2082,11 @@ function getPossibleTeams(slotId) {
       if (!sfFeeders) return null;
       const [teamA, teamB] = sfFeeders.map(f => {
         const actual = knockoutResults[f];
-        const userPick = picks[f];
+        const userPick = src[f];
         return actual || userPick || null;
       });
       // The loser is the one NOT picked/recorded as winner
-      const sfWinner = knockoutResults[feederId] || picks[feederId];
+      const sfWinner = knockoutResults[feederId] || src[feederId];
       if (sfWinner && teamA && teamB) {
         return sfWinner === teamA ? teamB : teamA;
       }
@@ -2096,12 +2097,12 @@ function getPossibleTeams(slotId) {
   return feeders.map(feederId => {
     const actual = knockoutResults[feederId];
     if (actual) return actual;
-    const userPick = picks[feederId];
+    const userPick = src[feederId];
     if (userPick) {
       // Validate the stored pick is actually a legitimate option for this feeder slot —
       // prevents stale/corrupted picks (e.g. from old bracket structures) from
       // silently propagating forward into later rounds as if they were valid.
-      const feederValid = getPossibleTeams(feederId);
+      const feederValid = getPossibleTeams(feederId, src);
       if (feederValid && feederValid.length && !feederValid.includes(userPick)) {
         return null; // stale — don't trust it
       }
@@ -2617,7 +2618,7 @@ async function auditAllPicks() {
         problems.push({ name, slotId: id, value: '(not picked)', type: 'missing' });
         return;
       }
-      const validOpts = validOptionsFor(id);
+      const validOpts = validOptionsFor(id, bp);
       const isStale = validOpts && validOpts.length === 2 && !validOpts.includes(v);
       if (isStale) {
         problems.push({ name, slotId: id, value: v, type: 'stale' });
@@ -2672,7 +2673,7 @@ async function editStalePick(name, slotId) {
   let bp = {};
   try { bp = typeof e.BracketPicks === 'string' ? JSON.parse(e.BracketPicks) : (e.BracketPicks || {}); } catch(err) {}
 
-  const validOpts = validOptionsFor(slotId);
+  const validOpts = validOptionsFor(slotId, bp);
 
   const promptMsg = getPickSlotLabel(slotId) + (validOpts && validOpts.length ? '\nValid options: ' + validOpts.join(' or ') : '') + '\n\nEnter corrected pick (or leave blank to clear):';
   const newVal = prompt(promptMsg, bp[slotId] || '');
@@ -2721,8 +2722,10 @@ function getPickSlotLabel(id) {
   return id;
 }
 
-// Determine the valid options for a given slot so admin tooling can spot AND fix stale/mismatched picks
-function validOptionsFor(id) {
+// Determine the valid options for a given slot so admin tooling can spot AND fix stale/mismatched picks.
+// picksSource lets this be evaluated against a SPECIFIC participant's submitted picks rather than
+// the admin's own local picks — essential for auditing other people's brackets correctly.
+function validOptionsFor(id, picksSource) {
   try {
     if (id.startsWith('r32_')) {
       const slot = R32_SLOTS.find(s => s.id === id);
@@ -2731,7 +2734,7 @@ function validOptionsFor(id) {
       const b = groupResults[slot.b] || (slot.b.startsWith('3rd Group') ? (resolveTeam(slot.b) !== slot.b ? resolveTeam(slot.b) : null) : null);
       return [a, b].filter(Boolean);
     }
-    return getPossibleTeams(id) || null;
+    return getPossibleTeams(id, picksSource) || null;
   } catch(err) { return null; }
 }
 
@@ -2746,7 +2749,7 @@ function showFullPicks(name) {
   const rows = PICK_SLOT_ORDER.map(id => {
     const v = bp[id] || '';
     const missing = !v;
-    const validOpts = validOptionsFor(id);
+    const validOpts = validOptionsFor(id, bp);
     const isStale = !missing && validOpts && validOpts.length === 2 && !validOpts.includes(v);
     const display = missing ? '(not picked)' : v;
     const rowColor = missing ? '#c00' : (isStale ? '#c70' : 'inherit');
