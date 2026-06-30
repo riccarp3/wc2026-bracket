@@ -2089,7 +2089,16 @@ function getPossibleTeams(slotId) {
     const actual = knockoutResults[feederId];
     if (actual) return actual;
     const userPick = picks[feederId];
-    if (userPick) return userPick;
+    if (userPick) {
+      // Validate the stored pick is actually a legitimate option for this feeder slot —
+      // prevents stale/corrupted picks (e.g. from old bracket structures) from
+      // silently propagating forward into later rounds as if they were valid.
+      const feederValid = getPossibleTeams(feederId);
+      if (feederValid && feederValid.length && !feederValid.includes(userPick)) {
+        return null; // stale — don't trust it
+      }
+      return userPick;
+    }
     return null;
   });
 }
@@ -2572,6 +2581,63 @@ function renderLeaderboardRows(entries){
   window._lbEntriesCache = entries;
 }
 
+async function editStalePick(name, slotId) {
+  if (!adminUnlocked) return;
+  const entries = window._lbEntriesCache || [];
+  const idx = entries.findIndex(x => (x.ParticipantName || x.name) === name);
+  if (idx === -1) { showToast('Could not find entry for ' + name, 'error'); return; }
+  const e = entries[idx];
+  let bp = {};
+  try { bp = typeof e.BracketPicks === 'string' ? JSON.parse(e.BracketPicks) : (e.BracketPicks || {}); } catch(err) {}
+
+  const labelMap = {};
+  R32_SLOTS.forEach(s => labelMap[s.id] = s.label || s.id);
+  KNOCKOUT_SLOTS.forEach(s => labelMap[s.id] = s.label || s.id);
+
+  // Figure out valid options to offer
+  let validOpts = null;
+  try {
+    if (slotId.startsWith('r32_')) {
+      const slot = R32_SLOTS.find(s => s.id === slotId);
+      if (slot) {
+        const a = groupResults[slot.a] || (slot.a.startsWith('3rd Group') ? (resolveTeam(slot.a) !== slot.a ? resolveTeam(slot.a) : null) : null);
+        const b = groupResults[slot.b] || (slot.b.startsWith('3rd Group') ? (resolveTeam(slot.b) !== slot.b ? resolveTeam(slot.b) : null) : null);
+        validOpts = [a, b].filter(Boolean);
+      }
+    } else {
+      validOpts = getPossibleTeams(slotId);
+    }
+  } catch(err) {}
+
+  const promptMsg = (labelMap[slotId] || slotId) + (validOpts && validOpts.length ? '\nValid options: ' + validOpts.join(' or ') : '') + '\n\nEnter corrected pick (or leave blank to clear):';
+  const newVal = prompt(promptMsg, bp[slotId] || '');
+  if (newVal === null) return; // cancelled
+
+  if (newVal.trim() === '') {
+    delete bp[slotId];
+  } else {
+    bp[slotId] = newVal.trim();
+  }
+
+  entries[idx] = { ...e, BracketPicks: JSON.stringify(bp) };
+  window._lbEntriesCache = entries;
+
+  try {
+    const res = await fetch(LEADERBOARD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries, phase2Unlocked: isPhase2UnlockedByAdmin() })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    showToast('Pick updated for ' + name + ' ✓', 'ok');
+    showFullPicks(name); // re-render modal with updated value
+    loadLeaderboard(); // refresh leaderboard scores
+  } catch(err) {
+    console.error('editStalePick error:', err);
+    showToast('Failed to save correction — try again.', 'error');
+  }
+}
+
 function showFullPicks(name) {
   if (!adminUnlocked) return;
   const entries = window._lbEntriesCache || [];
@@ -2585,12 +2651,31 @@ function showFullPicks(name) {
   const labelMap = {};
   R32_SLOTS.forEach(s => labelMap[s.id] = s.label || s.id);
   KNOCKOUT_SLOTS.forEach(s => labelMap[s.id] = s.label || s.id);
+  // Determine valid options for each slot so admin can spot AND fix stale/mismatched picks
+  const validOptionsFor = (id) => {
+    try {
+      if (id.startsWith('r32_')) {
+        const slot = R32_SLOTS.find(s => s.id === id);
+        if (!slot) return null;
+        const a = groupResults[slot.a] || (slot.a.startsWith('3rd Group') ? (resolveTeam(slot.a) !== slot.a ? resolveTeam(slot.a) : null) : null);
+        const b = groupResults[slot.b] || (slot.b.startsWith('3rd Group') ? (resolveTeam(slot.b) !== slot.b ? resolveTeam(slot.b) : null) : null);
+        return [a, b].filter(Boolean);
+      }
+      return getPossibleTeams(id) || null;
+    } catch(err) { return null; }
+  };
   const rows = order.map(id => {
-    const v = bp[id] || '(not picked)';
-    const missing = !bp[id];
-    return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:0.82rem;">'
+    const v = bp[id] || '';
+    const missing = !v;
+    const validOpts = validOptionsFor(id);
+    const isStale = !missing && validOpts && validOpts.length === 2 && !validOpts.includes(v);
+    const display = missing ? '(not picked)' : v;
+    const rowColor = missing ? '#c00' : (isStale ? '#c70' : 'inherit');
+    const flag = isStale ? ' <span style="font-size:0.68rem;background:#fde6c8;color:#a35a00;padding:1px 6px;border-radius:8px;">⚠ stale</span>' : '';
+    const editBtn = '<button onclick="editStalePick(\'' + name.replace(/'/g,"\\'") + '\',\'' + id + '\')" style="margin-left:8px;font-size:0.68rem;border:1px solid #ccc;background:#fff;border-radius:4px;padding:1px 6px;cursor:pointer;">✏️ fix</button>';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #eee;font-size:0.82rem;">'
       + '<span style="color:#777;">' + (labelMap[id] || id) + '</span>'
-      + '<span style="font-weight:600;' + (missing ? 'color:#c00;' : '') + '">' + v + '</span>'
+      + '<span style="display:flex;align-items:center;"><span style="font-weight:600;color:' + rowColor + ';">' + display + '</span>' + flag + editBtn + '</span>'
       + '</div>';
   }).join('');
   const submittedAt = e.SubmittedAt || e.submittedAt || e.Timestamp || 'unknown';
