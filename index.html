@@ -1129,12 +1129,8 @@
       <h3>Submit Knockout Bracket</h3>
       <p>Group stage picks are locked. Pick your knockout round winners and submit your full bracket.</p>
       <button class="submit-btn" id="submit-btn-p2" onclick="submitBracket('p2')">SUBMIT KNOCKOUT PICKS 🏆</button>
+      <button class="btn secondary" onclick="restoreMyPicks()" style="margin-top:8px;">🔄 Restore My Last Submitted Picks</button>
       <div id="submit-status-p2" style="font-size:0.78rem;color:var(--text-light);min-height:20px;"></div>
-    </div>
-
-    <div style="text-align:center;margin:10px 0;">
-      <button class="btn secondary" onclick="restoreMyPicks()">🔄 Restore My Last Submitted Picks</button>
-      <p style="font-size:0.72rem;color:var(--text-light);margin-top:4px;">If your picks ever look blank or wrong, click this to pull back your most recent successful submission — works even while the bracket is locked.</p>
     </div>
 
   </div>
@@ -1816,6 +1812,7 @@ function updatePhaseUI() {
   const desc   = document.getElementById('phase-desc');
   const areaP1 = document.getElementById('submit-area-p1');
   const areaP2 = document.getElementById('submit-area-p2');
+  const submitBtnP2 = document.getElementById('submit-btn-p2');
 
   if (phase === 1) {
     if(icon)  icon.textContent  = '⚽';
@@ -1828,13 +1825,16 @@ function updatePhaseUI() {
     if(title) title.textContent = 'Group Stage Underway';
     if(desc)  desc.innerHTML    = 'Group stage picks are locked. The knockout bracket will open once the admin unlocks it after the Round of 32 matchups are confirmed.';
     if(areaP1) areaP1.style.display = 'none';
-    if(areaP2) areaP2.style.display = 'none';
+    // Keep submit-area-p2 visible so the Restore button stays reachable, but disable the submit action
+    if(areaP2) areaP2.style.display = '';
+    if(submitBtnP2) { submitBtnP2.disabled = true; submitBtnP2.textContent = '🔒 Bracket Locked'; }
   } else {
     if(icon)  icon.textContent  = '🏆';
     if(title) title.textContent = 'Phase 2 — Knockout Bracket';
     if(desc)  desc.innerHTML    = 'Group stage picks are locked. Pick your Round of 32 winners through to the Final.';
     if(areaP1) areaP1.style.display = 'none';
     if(areaP2) areaP2.style.display = '';
+    if(submitBtnP2) { submitBtnP2.disabled = false; submitBtnP2.innerHTML = 'SUBMIT KNOCKOUT PICKS 🏆'; }
   }
   // Lock group stage selects if past phase 1
   if (phase !== 1) {
